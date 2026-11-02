@@ -26,12 +26,78 @@
       <div class="aub-inner">
         <div class="aub-left">
           <span class="aub-badge">Update Ready</span>
-          <div class="aub-title">New version available (<span id="aubNewVer">v1.0.2</span>)</div>
+          <div class="aub-title">New version available (<span id="aubNewVer">v1.0.5</span>)</div>
         </div>
         <div class="aub-actions">
           <button type="button" class="aub-update-btn" id="aubUpdateBtn">Update App</button>
           <button type="button" class="aub-close-btn" id="aubCloseBtn" aria-label="Dismiss">&times;</button>
         </div>
+      </div>
+    </div>
+
+    <!-- ═══ IN-APP LIVE UPDATE MODAL (OTA DOWNLOADER) ═══ -->
+    <div class="update-modal-overlay" id="updateModalOverlay" style="display: none;">
+      <div class="update-modal-card">
+        
+        <!-- Header with App Icon and Version -->
+        <div class="umc-header">
+          <div class="umc-brand">
+            <div class="umc-icon-wrap">
+              <img src="https://res.cloudinary.com/dnrgcigsj/image/upload/v1789365942/trio-dark-logo_ayyhkh.svg" alt="FMS Logo" class="umc-app-icon">
+            </div>
+            <div class="umc-title-box">
+              <h3 class="umc-title">FMS Workspace Update</h3>
+              <div class="umc-meta">
+                <span class="umc-version-badge" id="umcVersionBadge">v1.0.5</span>
+                <span class="umc-size-badge" id="umcSizeBadge">12.3 MB</span>
+              </div>
+            </div>
+          </div>
+          <button type="button" class="umc-close-btn" id="umcCloseBtn" aria-label="Cancel update">&times;</button>
+        </div>
+
+        <!-- Release Notes Preview -->
+        <div class="umc-notes-card">
+          <div class="umc-notes-title">What's New in this version</div>
+          <ul class="umc-notes-list" id="umcNotesList">
+            <li>Dynamic KPI calculation for Unit filtering</li>
+            <li>Excel (.xlsx) and PDF report downloads</li>
+            <li>Live in-app auto updater & performance engine</li>
+          </ul>
+        </div>
+
+        <!-- Progress Bar & Metrics -->
+        <div class="umc-progress-section">
+          <div class="umc-status-row">
+            <span class="umc-status-text" id="umcStatusText">Ready to download</span>
+            <span class="umc-percent-text" id="umcPercentText">0%</span>
+          </div>
+
+          <div class="umc-progress-track">
+            <div class="umc-progress-fill" id="umcProgressFill" style="width: 0%;">
+              <div class="umc-progress-shimmer"></div>
+            </div>
+          </div>
+
+          <div class="umc-metrics-row">
+            <span class="umc-metric-downloaded" id="umcMetricDownloaded">0.0 MB / 12.3 MB</span>
+            <span class="umc-metric-speed" id="umcMetricSpeed">0.0 KB/s</span>
+          </div>
+        </div>
+
+        <!-- Action / Footer Section -->
+        <div class="umc-footer">
+          <button type="button" class="umc-start-btn" id="umcStartBtn" style="display: none;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            <span>Download & Install Now</span>
+          </button>
+          <div class="umc-sub-note" id="umcSubNote">Please keep the app open during download.</div>
+        </div>
+
       </div>
     </div>
 
