@@ -2365,3 +2365,90 @@ body {
 .form-btn-reset:active {
   transform: scale(0.92);
 }
+
+/* ═══ IN-APP LIVE UPDATE BANNER ═══ */
+.app-update-banner {
+  position: fixed;
+  top: 10px;
+  left: 12px;
+  right: 12px;
+  z-index: 9999;
+  background: linear-gradient(135deg, #1E2229 0%, #0f5132 100%);
+  color: #ffffff;
+  border-radius: 16px;
+  padding: 12px 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.15);
+  animation: slideDownUpdate 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideDownUpdate {
+  from {
+    transform: translateY(-80px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.aub-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.aub-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.aub-badge {
+  align-self: flex-start;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  background-color: #25a244;
+  color: #ffffff;
+  padding: 2px 7px;
+  border-radius: 20px;
+}
+
+.aub-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #fbf6eb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.aub-update-btn {
+  background-color: #fbf6eb;
+  color: #0f5132;
+  font-size: 12px;
+  font-weight: 800;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.aub-update-btn:active {
+  transform: scale(0.95);
+  background-color: #ffffff;
+}
+
+.highlight-inspector {
+  border: 1.5px solid var(--forest-green);
+  background-color: rgba(15, 81, 50, 0.05);
+}
