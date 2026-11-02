@@ -1443,7 +1443,7 @@ window.addEventListener('online', () => {
 // IN-APP LIVE UPDATE ENGINE
 // Automatically detects GitHub updates & provides 1-click reload
 // ==========================================
-const CURRENT_APP_VERSION = '1.0.2';
+const CURRENT_APP_VERSION = '1.0.5';
 let pendingUpdateVersion = null;
 
 function getInstalledAppVersion() {
@@ -1495,7 +1495,7 @@ function initAppUpdateEngine() {
 
   const drawerUpdateBtn = document.getElementById('drawerUpdateBtn');
   if (drawerUpdateBtn) {
-    drawerUpdateBtn.addEventListener('click', () => checkForAppUpdates(false));
+    drawerUpdateBtn.onclick = handleManualUpdateCheck;
   }
 
   // Check immediately on launch
@@ -1505,21 +1505,111 @@ function initAppUpdateEngine() {
   setInterval(() => checkForAppUpdates(true), 120000);
 }
 
-async function checkForAppUpdates(silent = true) {
+async function handleManualUpdateCheck() {
+  const drawerUpdateBtn = document.getElementById('drawerUpdateBtn');
+  const localVer = getInstalledAppVersion();
+
+  if (drawerUpdateBtn) {
+    drawerUpdateBtn.disabled = true;
+    drawerUpdateBtn.innerHTML = `
+      <span style="display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+        <span class="btn-inline-spinner"></span> Checking...
+      </span>
+      <small style="display:block; font-size:10px; opacity:0.8;">Checking for updates</small>
+    `;
+  }
+  showToast('Checking for updates...');
+
   try {
     const res = await fetch('version.json?_t=' + Date.now(), { cache: 'no-store' });
-    if (!res.ok) {
-      if (!silent) showToast('Could not reach update server');
-      return;
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const remoteVer = data && data.version ? String(data.version).trim() : null;
+
+    if (!remoteVer) throw new Error('No version in response');
+
+    const hasNewUpdate = isVersionNewer(remoteVer, localVer) && isVersionNewer(remoteVer, CURRENT_APP_VERSION);
+
+    if (hasNewUpdate) {
+      pendingUpdateVersion = remoteVer;
+      sessionStorage.removeItem('fms_dismissed_version');
+      showAppUpdateBanner(remoteVer);
+      showToast(`Update v${remoteVer} is ready to install!`);
+
+      if (drawerUpdateBtn) {
+        drawerUpdateBtn.disabled = false;
+        drawerUpdateBtn.innerHTML = `
+          <span style="color:#25a244; font-weight:800;">✓ Update Ready (v${remoteVer})</span>
+          <small style="display:block; font-size:10px;">Tap here to install now</small>
+        `;
+        drawerUpdateBtn.onclick = () => {
+          applyAppUpdate();
+        };
+      }
+      setTimeout(() => {
+        closeSidePanel();
+      }, 700);
+    } else {
+      hideAppUpdateBanner();
+      showToast(`✓ App is up to date (v${localVer})`);
+
+      if (drawerUpdateBtn) {
+        drawerUpdateBtn.disabled = false;
+        drawerUpdateBtn.innerHTML = `
+          <span style="color:var(--forest-green); font-weight:800;">✓ Up to Date (v${localVer})</span>
+          <small style="display:block; font-size:10px; opacity:0.85;">Tap to force reload cache</small>
+        `;
+        drawerUpdateBtn.onclick = () => {
+          showToast('Refreshing app assets...');
+          applyAppUpdate();
+        };
+      }
+
+      setTimeout(() => {
+        if (drawerUpdateBtn && drawerUpdateBtn.innerHTML.includes('Up to Date')) {
+          drawerUpdateBtn.disabled = false;
+          drawerUpdateBtn.onclick = handleManualUpdateCheck;
+          drawerUpdateBtn.innerHTML = `
+            <span>App Version <strong id="drawerAppVersion">${localVer}</strong></span>
+            <small style="display:block; font-size:10px; opacity:0.75;">Tap to Check for Updates</small>
+          `;
+        }
+      }, 4000);
     }
+  } catch (err) {
+    console.warn('Manual update check error:', err);
+    showToast('Could not reach update server. Check connection.');
+    if (drawerUpdateBtn) {
+      drawerUpdateBtn.disabled = false;
+      drawerUpdateBtn.innerHTML = `
+        <span style="color:#d9383a; font-weight:800;">✕ Check Failed</span>
+        <small style="display:block; font-size:10px;">Tap to retry</small>
+      `;
+      drawerUpdateBtn.onclick = handleManualUpdateCheck;
+      setTimeout(() => {
+        if (drawerUpdateBtn && drawerUpdateBtn.innerHTML.includes('Check Failed')) {
+          drawerUpdateBtn.innerHTML = `
+            <span>App Version <strong id="drawerAppVersion">${localVer}</strong></span>
+            <small style="display:block; font-size:10px; opacity:0.75;">Tap to Check for Updates</small>
+          `;
+        }
+      }, 3500);
+    }
+  }
+}
+
+async function checkForAppUpdates(silent = true) {
+  if (!silent) {
+    return handleManualUpdateCheck();
+  }
+  try {
+    const res = await fetch('version.json?_t=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) return;
     const data = await res.json();
     const remoteVer = data && data.version ? String(data.version).trim() : null;
     const localVer = getInstalledAppVersion();
 
-    if (!remoteVer) {
-      if (!silent) showToast('No version info found');
-      return;
-    }
+    if (!remoteVer) return;
 
     // Only show banner if remote version is strictly newer than installed version
     // AND strictly newer than base code version
@@ -1528,24 +1618,16 @@ async function checkForAppUpdates(silent = true) {
     if (hasNewUpdate) {
       // If user previously dismissed this version during current session, don't nag silently
       const dismissedVer = sessionStorage.getItem('fms_dismissed_version');
-      if (dismissedVer === remoteVer && silent) {
+      if (dismissedVer === remoteVer) {
         return;
       }
       pendingUpdateVersion = remoteVer;
       showAppUpdateBanner(remoteVer);
-      if (!silent) {
-        showToast(`Update v${remoteVer} is available!`);
-      }
     } else {
-      // User is already on this version or newer: ensure banner is hidden!
       hideAppUpdateBanner();
-      if (!silent) {
-        showToast(`App is up to date (v${localVer})`);
-      }
     }
   } catch (err) {
-    console.warn('Update check failed:', err);
-    if (!silent) showToast('Could not check for updates');
+    console.warn('Silent update check failed:', err);
   }
 }
 
