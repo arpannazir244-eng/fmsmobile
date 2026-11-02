@@ -845,7 +845,10 @@ async function silentlyRefreshEolCount() {
 
 // ---------- Reports View Dynamic Renderer ----------
 function renderReportsView() {
-  if (!eolDataCache) return;
+  if (!eolDataCache) {
+    fetchEolData().then(() => renderReportsView());
+    return;
+  }
 
   const repTotalAudited = document.getElementById('repTotalAudited');
   const repTotalInspectors = document.getElementById('repTotalInspectors');
@@ -936,6 +939,241 @@ function renderReportsView() {
   if (repBatchSearch) {
     repBatchSearch.addEventListener('input', (e) => renderBatchItems(e.target.value));
   }
+}
+
+// ---------- Reports Export & Actions (Excel .xlsx & PDF) ----------
+async function downloadReportFile(blob, filename) {
+  // 1. Try Mobile Web Share API (native share on Android devices)
+  if (navigator.canShare) {
+    try {
+      const file = new File([blob], filename, { type: blob.type });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: filename,
+          text: 'FMS Mobile QC Report'
+        });
+        showToast('Shared: ' + filename);
+        return;
+      }
+    } catch (e) {
+      if (e.name !== 'AbortError') {
+        console.warn('Web Share failed, fallback to download:', e);
+      } else {
+        return;
+      }
+    }
+  }
+
+  // 2. Standard Blob Download Anchor
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.style.display = 'none';
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 2000);
+  showToast('Downloaded: ' + filename);
+}
+
+async function ensureReportData() {
+  if (!eolDataCache || !eolDataCache.production || eolDataCache.production.length === 0) {
+    showToast('Loading latest report data...');
+    await fetchEolData(true);
+  }
+  return eolDataCache;
+}
+
+async function exportReportsToExcel() {
+  if (typeof XLSX === 'undefined') {
+    showToast('Excel library not loaded');
+    return;
+  }
+  const cache = await ensureReportData();
+  const prodList = (cache && cache.production) || [];
+  if (prodList.length === 0) {
+    showToast('No report data available to export');
+    return;
+  }
+
+  showToast('Generating Excel report...');
+
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1: Production Batches
+  const batchRows = prodList.map(item => ({
+    'Batch ID': item.batchId || '',
+    'Style': item.style || '',
+    'Colour': item.colour || '',
+    'PO': item.po || '',
+    'SKU': item.sku || '',
+    'Unit': item.unit || '',
+    'Fabricator': item.fabricator || '',
+    'Available Quantity': Number(item.quantity) || 0,
+    'Total Quantity': Number(item.totalQuantity) || 0,
+    'ETD': item.etd || ''
+  }));
+  const wsBatches = XLSX.utils.json_to_sheet(batchRows);
+  XLSX.utils.book_append_sheet(wb, wsBatches, 'Production Batches');
+
+  // Sheet 2: QC Inspector Leaderboard
+  const userCounts = (cache && cache.eolEntryCountsByUser) || {};
+  const todayCounts = (cache && cache.eolTodayEntryCountsByUser) || {};
+  const inspectorRows = Object.keys(userCounts).map(name => ({
+    'Inspector Name': name,
+    'Total Audited Batches': Number(userCounts[name]) || 0,
+    'Today Audited': Number(todayCounts[name]) || 0
+  }));
+  const wsInspectors = XLSX.utils.json_to_sheet(inspectorRows.length > 0 ? inspectorRows : [{ 'Inspector Name': 'No data', 'Total Audited Batches': 0, 'Today Audited': 0 }]);
+  XLSX.utils.book_append_sheet(wb, wsInspectors, 'QC Inspectors');
+
+  const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const filename = `FMS_QC_Report_${dateStr}.xlsx`;
+
+  await downloadReportFile(blob, filename);
+}
+
+async function exportReportsToPdf() {
+  const jsPDFClass = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+  if (!jsPDFClass) {
+    showToast('PDF library not loaded');
+    return;
+  }
+  const cache = await ensureReportData();
+  const prodList = (cache && cache.production) || [];
+  if (prodList.length === 0) {
+    showToast('No report data available to export');
+    return;
+  }
+
+  showToast('Generating PDF report...');
+
+  try {
+    const doc = new jsPDFClass({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+
+    // Top Header Banner
+    doc.setFillColor(30, 34, 41);
+    doc.rect(0, 0, 595.28, 60, 'F');
+    doc.setTextColor(251, 246, 235);
+    doc.setFontSize(15);
+    doc.setFont('helvetica', 'bold');
+    doc.text('FMS Workspace — Mobile Production QC Report', 30, 34);
+
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Trio Trend Exports Pvt. Ltd.', 30, 48);
+    const dateStr = new Date().toLocaleString();
+    doc.text(`Generated: ${dateStr}`, 410, 48);
+
+    // Section 1: QC Inspector Performance
+    doc.setTextColor(30, 34, 41);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('1. QC Inspector Performance Summary', 30, 85);
+
+    const userCounts = (cache && cache.eolEntryCountsByUser) || {};
+    const todayCounts = (cache && cache.eolTodayEntryCountsByUser) || {};
+    const inspectorRows = Object.keys(userCounts).map(name => [
+      name,
+      String(userCounts[name] || 0),
+      String(todayCounts[name] || 0)
+    ]);
+
+    doc.autoTable({
+      startY: 95,
+      head: [['Inspector Name', 'Total Audited Batches', 'Today Audited']],
+      body: inspectorRows.length > 0 ? inspectorRows : [['No data recorded', '0', '0']],
+      theme: 'grid',
+      headStyles: { fillColor: [30, 34, 41], textColor: [255, 255, 255], fontStyle: 'bold' },
+      styles: { fontSize: 9, cellPadding: 5 },
+      margin: { left: 30, right: 30 }
+    });
+
+    // Section 2: Production Batches
+    const nextY = (doc.lastAutoTable ? doc.lastAutoTable.finalY : 180) + 25;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('2. Production Batches Overview', 30, nextY);
+
+    const batchRows = prodList.slice(0, 150).map(item => [
+      item.batchId || '',
+      item.style || '',
+      item.unit || '',
+      item.fabricator || '',
+      `${item.quantity || 0} / ${item.totalQuantity || 0}`,
+      item.etd || ''
+    ]);
+
+    doc.autoTable({
+      startY: nextY + 10,
+      head: [['Batch ID', 'Style', 'Unit', 'Fabricator', 'Avail / Total', 'ETD']],
+      body: batchRows.length > 0 ? batchRows : [['No batches found', '', '', '', '', '']],
+      theme: 'striped',
+      headStyles: { fillColor: [15, 81, 50], textColor: [255, 255, 255], fontStyle: 'bold' },
+      styles: { fontSize: 8, cellPadding: 4 },
+      margin: { left: 30, right: 30 }
+    });
+
+    const blob = doc.output('blob');
+    const fileDate = new Date().toISOString().slice(0, 10);
+    const filename = `FMS_QC_Report_${fileDate}.pdf`;
+
+    await downloadReportFile(blob, filename);
+
+  } catch (err) {
+    console.error('PDF generation error:', err);
+    showToast('Failed to generate PDF: ' + err.message);
+  }
+}
+
+// Attach Event Listeners for Export & Reports UI
+const btnExportExcel = document.getElementById('btnExportExcel');
+if (btnExportExcel) {
+  btnExportExcel.addEventListener('click', exportReportsToExcel);
+}
+
+const btnExportPdf = document.getElementById('btnExportPdf');
+if (btnExportPdf) {
+  btnExportPdf.addEventListener('click', exportReportsToPdf);
+}
+
+const repSyncBtn = document.getElementById('repSyncBtn');
+if (repSyncBtn) {
+  repSyncBtn.addEventListener('click', async () => {
+    showToast('Syncing latest reports data...');
+    await fetchEolData(true);
+    renderReportsView();
+    showToast('Reports data updated');
+  });
+}
+
+const repUnitFilterPills = document.getElementById('repUnitFilterPills');
+if (repUnitFilterPills) {
+  repUnitFilterPills.querySelectorAll('.rep-filter-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      repUnitFilterPills.querySelectorAll('.rep-filter-pill').forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      const unit = pill.dataset.unit;
+      const searchInput = document.getElementById('repBatchSearch');
+      if (unit === 'ALL') {
+        if (searchInput) {
+          searchInput.value = '';
+          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      } else {
+        if (searchInput) {
+          searchInput.value = unit;
+          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      }
+    });
+  });
 }
 
 // ---------- Password Toggle (login.html) ----------
