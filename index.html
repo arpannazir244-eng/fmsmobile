@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>FMS Workspace — Mobile Production</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=1.0.2">
   <script>
     // Auth guard: bounce to login if not signed in
     if (!localStorage.getItem('nimbus_logged_in')) {
@@ -20,6 +20,17 @@
 
 <body>
   <div class="app">
+
+    <!-- ═══ IN-APP LIVE UPDATE BANNER ═══ -->
+    <div class="app-update-banner" id="appUpdateBanner" style="display: none;">
+      <div class="aub-inner">
+        <div class="aub-left">
+          <span class="aub-badge">Update Ready</span>
+          <div class="aub-title">New version available (<span id="aubNewVer">v1.0.2</span>)</div>
+        </div>
+        <button type="button" class="aub-update-btn" id="aubUpdateBtn">Update App</button>
+      </div>
+    </div>
 
     <!-- ═══ SIDE DRAWER ═══ -->
     <div class="side-overlay" id="sideOverlay"></div>
@@ -109,6 +120,10 @@
 
       <div class="drawer-footer">
         <button class="drawer-action-btn" id="drawerSyncBtn">Sync Sheets Data</button>
+        <button class="drawer-action-btn" id="drawerUpdateBtn" style="margin-top:6px; background:rgba(15,81,50,0.08); color:var(--forest-green); border:1px solid rgba(15,81,50,0.25);">
+          <span>App Version <strong id="drawerAppVersion">1.0.2</strong></span>
+          <small style="display:block; font-size:10px; opacity:0.75;">Tap to Check for Updates</small>
+        </button>
         <button class="drawer-logout-btn" id="drawerLogoutBtn">Sign Out</button>
       </div>
     </aside>
@@ -772,11 +787,11 @@
 
   </div>
 
-  <script src="xlsx.full.min.js"></script>
-  <script src="jspdf.umd.min.js"></script>
-  <script src="jspdf.plugin.autotable.min.js"></script>
-  <script src="db.js"></script>
-  <script src="main.js"></script>
+  <script src="xlsx.full.min.js?v=1.0.2"></script>
+  <script src="jspdf.umd.min.js?v=1.0.2"></script>
+  <script src="jspdf.plugin.autotable.min.js?v=1.0.2"></script>
+  <script src="db.js?v=1.0.2"></script>
+  <script src="main.js?v=1.0.2"></script>
 </body>
 
 </html>
