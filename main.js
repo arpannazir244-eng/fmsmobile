@@ -1444,14 +1444,53 @@ window.addEventListener('online', () => {
 // Automatically detects GitHub updates & provides 1-click reload
 // ==========================================
 const CURRENT_APP_VERSION = '1.0.2';
+let pendingUpdateVersion = null;
+
+function getInstalledAppVersion() {
+  const saved = localStorage.getItem('fms_installed_version');
+  if (saved && saved.trim()) return saved.trim();
+  localStorage.setItem('fms_installed_version', CURRENT_APP_VERSION);
+  return CURRENT_APP_VERSION;
+}
+
+function setInstalledAppVersion(ver) {
+  if (ver && String(ver).trim()) {
+    localStorage.setItem('fms_installed_version', String(ver).trim());
+  }
+}
+
+// Compare semantic versions (e.g. "1.0.3" > "1.0.2")
+function isVersionNewer(remoteVer, localVer) {
+  if (!remoteVer || !localVer) return false;
+  const cleanR = String(remoteVer).trim().replace(/^v/i, '');
+  const cleanL = String(localVer).trim().replace(/^v/i, '');
+  if (cleanR === cleanL) return false;
+
+  const rParts = cleanR.split('.').map(n => parseInt(n, 10) || 0);
+  const lParts = cleanL.split('.').map(n => parseInt(n, 10) || 0);
+  const maxLen = Math.max(rParts.length, lParts.length);
+
+  for (let i = 0; i < maxLen; i++) {
+    const r = rParts[i] || 0;
+    const l = lParts[i] || 0;
+    if (r > l) return true;
+    if (r < l) return false;
+  }
+  return false;
+}
 
 function initAppUpdateEngine() {
   const drawerAppVersion = document.getElementById('drawerAppVersion');
-  if (drawerAppVersion) drawerAppVersion.textContent = CURRENT_APP_VERSION;
+  if (drawerAppVersion) drawerAppVersion.textContent = getInstalledAppVersion();
 
   const aubUpdateBtn = document.getElementById('aubUpdateBtn');
   if (aubUpdateBtn) {
     aubUpdateBtn.addEventListener('click', applyAppUpdate);
+  }
+
+  const aubCloseBtn = document.getElementById('aubCloseBtn');
+  if (aubCloseBtn) {
+    aubCloseBtn.addEventListener('click', dismissAppUpdateBanner);
   }
 
   const drawerUpdateBtn = document.getElementById('drawerUpdateBtn');
@@ -1469,14 +1508,43 @@ function initAppUpdateEngine() {
 async function checkForAppUpdates(silent = true) {
   try {
     const res = await fetch('version.json?_t=' + Date.now(), { cache: 'no-store' });
-    if (!res.ok) return;
+    if (!res.ok) {
+      if (!silent) showToast('Could not reach update server');
+      return;
+    }
     const data = await res.json();
-    if (data && data.version && data.version !== CURRENT_APP_VERSION) {
-      showAppUpdateBanner(data.version);
-    } else if (!silent) {
-      showToast(`App is up to date (v${CURRENT_APP_VERSION})`);
+    const remoteVer = data && data.version ? String(data.version).trim() : null;
+    const localVer = getInstalledAppVersion();
+
+    if (!remoteVer) {
+      if (!silent) showToast('No version info found');
+      return;
+    }
+
+    // Only show banner if remote version is strictly newer than installed version
+    // AND strictly newer than base code version
+    const hasNewUpdate = isVersionNewer(remoteVer, localVer) && isVersionNewer(remoteVer, CURRENT_APP_VERSION);
+
+    if (hasNewUpdate) {
+      // If user previously dismissed this version during current session, don't nag silently
+      const dismissedVer = sessionStorage.getItem('fms_dismissed_version');
+      if (dismissedVer === remoteVer && silent) {
+        return;
+      }
+      pendingUpdateVersion = remoteVer;
+      showAppUpdateBanner(remoteVer);
+      if (!silent) {
+        showToast(`Update v${remoteVer} is available!`);
+      }
+    } else {
+      // User is already on this version or newer: ensure banner is hidden!
+      hideAppUpdateBanner();
+      if (!silent) {
+        showToast(`App is up to date (v${localVer})`);
+      }
     }
   } catch (err) {
+    console.warn('Update check failed:', err);
     if (!silent) showToast('Could not check for updates');
   }
 }
@@ -1490,9 +1558,37 @@ function showAppUpdateBanner(newVersion) {
   }
 }
 
+function hideAppUpdateBanner() {
+  const banner = document.getElementById('appUpdateBanner');
+  if (banner) {
+    banner.style.display = 'none';
+  }
+}
+
+function dismissAppUpdateBanner() {
+  if (pendingUpdateVersion) {
+    sessionStorage.setItem('fms_dismissed_version', pendingUpdateVersion);
+  }
+  hideAppUpdateBanner();
+}
+
 async function applyAppUpdate() {
-  showToast('Updating app to latest version...');
+  const targetVer = pendingUpdateVersion || getInstalledAppVersion();
+  // Persist installed version immediately so banner never reappears for it
+  setInstalledAppVersion(targetVer);
+  sessionStorage.removeItem('fms_dismissed_version');
+  hideAppUpdateBanner();
+  showToast(`Updating app to v${targetVer}...`);
+
   try {
+    // Unregister active service workers to purge old assets
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const reg of registrations) {
+        await reg.unregister();
+      }
+    }
+    // Purge CacheStorage
     if ('caches' in window) {
       const keys = await caches.keys();
       await Promise.all(keys.map(k => caches.delete(k)));
@@ -1500,9 +1596,13 @@ async function applyAppUpdate() {
   } catch (e) {
     console.warn('Cache clear error:', e);
   }
-  // Hard reload with cache-buster timestamp
-  const freshUrl = window.location.pathname + '?v=' + Date.now();
-  window.location.replace(freshUrl);
+
+  // Hard reload with cache busters
+  setTimeout(() => {
+    const cleanPath = window.location.pathname;
+    const freshUrl = `${cleanPath}?v=${encodeURIComponent(targetVer)}&_t=${Date.now()}`;
+    window.location.replace(freshUrl);
+  }, 350);
 }
 
 // ---------- Boot Sequence ----------
