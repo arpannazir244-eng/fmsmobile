@@ -509,159 +509,6 @@
 
       </div>
 
-      <!-- ── VIEW 2: REPORTS & ANALYTICS VIEW ── -->
-      <div id="viewReports" hidden>
-
-        <!-- Section Header -->
-        <div class="section-header">
-          <div class="section-title-wrap">
-            <h2 class="section-label">Inspection Reports</h2>
-            <span class="section-badge">Live Analytics</span>
-          </div>
-          <button class="refresh-pill-btn" id="repSyncBtn" title="Sync Report Data">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-1.19" />
-            </svg>
-            <span>Sync</span>
-          </button>
-        </div>
-
-        <!-- ── EXPORT ACTION BAR (Excel .xlsx & PDF) ── -->
-        <div class="export-actions-card">
-          <div class="export-header-row">
-            <div class="export-title-block">
-              <span class="export-label">Download QC Reports</span>
-              <span class="export-sub">Export full analysis in .xlsx or PDF format</span>
-            </div>
-            <span class="export-badge">Official</span>
-          </div>
-
-          <div class="export-btn-group">
-            <button type="button" class="export-btn export-excel-btn" id="btnExportExcel">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-                <line x1="8" y1="13" x2="16" y2="13"></line>
-                <line x1="8" y1="17" x2="16" y2="17"></line>
-                <polyline points="10 9 9 9 8 9"></polyline>
-              </svg>
-              <span>Download Excel</span>
-            </button>
-
-            <button type="button" class="export-btn export-pdf-btn" id="btnExportPdf">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-                <line x1="12" y1="18" x2="12" y2="12"></line>
-                <line x1="9" y1="15" x2="15" y2="15"></line>
-              </svg>
-              <span>Download PDF</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- ── ANALYSIS FILTER CHIPS ── -->
-        <div class="analysis-filter-bar">
-          <div class="filter-scroll-pills" id="repUnitFilterPills">
-            <button type="button" class="rep-filter-pill active" data-unit="ALL">All Units</button>
-            <button type="button" class="rep-filter-pill" data-unit="P-32">Unit P-32</button>
-            <button type="button" class="rep-filter-pill" data-unit="S-18">Unit S-18</button>
-            <button type="button" class="rep-filter-pill" data-unit="S-37">Unit S-37</button>
-            <button type="button" class="rep-filter-pill" data-unit="S-29">Unit S-29</button>
-            <button type="button" class="rep-filter-pill" data-unit="14-B">Unit 14-B</button>
-          </div>
-        </div>
-
-        <!-- ── 4-CARD ANALYSIS KPI GRID ── -->
-        <div class="analysis-kpi-grid">
-          <div class="analysis-kpi-card">
-            <div class="akpi-head">
-              <span class="akpi-icon green">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              </span>
-              <span class="akpi-label">Pass Rate</span>
-            </div>
-            <div class="akpi-val" id="analysisPassRate">98.2%</div>
-            <div class="akpi-bar-bg"><div class="akpi-bar-fill" id="analysisPassBar" style="width: 98%;"></div></div>
-            <span class="akpi-sub" id="analysisPassSub">Quality Standard</span>
-          </div>
-
-          <div class="analysis-kpi-card">
-            <div class="akpi-head">
-              <span class="akpi-icon mint">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
-              </span>
-              <span class="akpi-label">Total Prod</span>
-            </div>
-            <div class="akpi-val" id="analysisTotalProd">—</div>
-            <div class="akpi-bar-bg"><div class="akpi-bar-fill mint" style="width: 100%;"></div></div>
-            <span class="akpi-sub">Total batch pieces</span>
-          </div>
-
-          <div class="analysis-kpi-card">
-            <div class="akpi-head">
-              <span class="akpi-icon blue">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
-              </span>
-              <span class="akpi-label">Dispatched</span>
-            </div>
-            <div class="akpi-val" id="analysisDispatched">—</div>
-            <div class="akpi-bar-bg"><div class="akpi-bar-fill blue" id="analysisDispatchBar" style="width: 60%;"></div></div>
-            <span class="akpi-sub">Transferred to WH</span>
-          </div>
-
-          <div class="analysis-kpi-card">
-            <div class="akpi-head">
-              <span class="akpi-icon peach">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-              </span>
-              <span class="akpi-label">Balance</span>
-            </div>
-            <div class="akpi-val" id="analysisBalance">—</div>
-            <div class="akpi-bar-bg"><div class="akpi-bar-fill peach" id="analysisBalanceBar" style="width: 40%;"></div></div>
-            <span class="akpi-sub">Remaining to QC</span>
-          </div>
-        </div>
-
-        <!-- ── UNIT PRODUCTION ANALYSIS ── -->
-        <div class="reports-card">
-          <div class="reports-card-header">
-            <h3>Unit Quality Breakdown</h3>
-            <span class="card-badge" id="analysisUnitCount">5 Units</span>
-          </div>
-          <div class="unit-analysis-list" id="unitAnalysisList"></div>
-        </div>
-
-        <!-- ── INSPECTOR PERFORMANCE LEADERBOARD ── -->
-        <div class="reports-card">
-          <div class="reports-card-header">
-            <h3>Inspector Verification Ranking</h3>
-            <span class="card-badge" id="analysisInspectorsBadge">Inspectors</span>
-          </div>
-          <div class="leaderboard-list" id="leaderboardList"></div>
-        </div>
-
-        <!-- ── BATCH INVENTORY & DETAILS ── -->
-        <div class="reports-card">
-          <div class="reports-card-header">
-            <h3>Batch Production Details</h3>
-            <span class="card-badge" id="repBatchCount">Batches</span>
-          </div>
-          <div class="reports-search-wrap">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <input type="text" id="repBatchSearch" placeholder="Search batch, style, unit...">
-          </div>
-          <div class="batch-preview-list" id="repBatchList"></div>
-        </div>
-
-        <div style="display:none;" id="repTotalAudited"></div>
-        <div style="display:none;" id="repTotalInspectors"></div>
-
-      </div>
-
     </main>
 
     <!-- ═══ BOTTOM NAVIGATION BAR (Exact Match to Screen 2 & 3) ═══ -->
@@ -686,14 +533,14 @@
         </div>
       </button>
 
-      <button class="nav-tab" data-view="reports" aria-label="Reports">
+      <a href="report.html" class="nav-tab" data-view="reports" aria-label="Reports" style="text-decoration: none;">
         <span class="nav-icon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M18 20V10M12 20V4M6 20v-6"></path>
           </svg>
         </span>
         <span>Reports</span>
-      </button>
+      </a>
     </nav>
 
     <!-- ═══ TOAST ═══ -->
