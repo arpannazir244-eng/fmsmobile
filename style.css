@@ -2448,6 +2448,33 @@ body {
   background-color: #ffffff;
 }
 
+.aub-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.aub-close-btn {
+  background: transparent;
+  color: rgba(251, 246, 235, 0.7);
+  font-size: 20px;
+  line-height: 1;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.aub-close-btn:active {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.15);
+}
+
 .highlight-inspector {
   border: 1.5px solid var(--forest-green);
   background-color: rgba(15, 81, 50, 0.05);
