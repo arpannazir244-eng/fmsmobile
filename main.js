@@ -1439,12 +1439,79 @@ window.addEventListener('online', () => {
   }
 });
 
+// ==========================================
+// IN-APP LIVE UPDATE ENGINE
+// Automatically detects GitHub updates & provides 1-click reload
+// ==========================================
+const CURRENT_APP_VERSION = '1.0.2';
+
+function initAppUpdateEngine() {
+  const drawerAppVersion = document.getElementById('drawerAppVersion');
+  if (drawerAppVersion) drawerAppVersion.textContent = CURRENT_APP_VERSION;
+
+  const aubUpdateBtn = document.getElementById('aubUpdateBtn');
+  if (aubUpdateBtn) {
+    aubUpdateBtn.addEventListener('click', applyAppUpdate);
+  }
+
+  const drawerUpdateBtn = document.getElementById('drawerUpdateBtn');
+  if (drawerUpdateBtn) {
+    drawerUpdateBtn.addEventListener('click', () => checkForAppUpdates(false));
+  }
+
+  // Check immediately on launch
+  setTimeout(() => checkForAppUpdates(true), 2000);
+
+  // Periodically check every 2 minutes while app is running
+  setInterval(() => checkForAppUpdates(true), 120000);
+}
+
+async function checkForAppUpdates(silent = true) {
+  try {
+    const res = await fetch('version.json?_t=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data && data.version && data.version !== CURRENT_APP_VERSION) {
+      showAppUpdateBanner(data.version);
+    } else if (!silent) {
+      showToast(`App is up to date (v${CURRENT_APP_VERSION})`);
+    }
+  } catch (err) {
+    if (!silent) showToast('Could not check for updates');
+  }
+}
+
+function showAppUpdateBanner(newVersion) {
+  const banner = document.getElementById('appUpdateBanner');
+  const newVerSpan = document.getElementById('aubNewVer');
+  if (newVerSpan) newVerSpan.textContent = `v${newVersion}`;
+  if (banner) {
+    banner.style.display = 'block';
+  }
+}
+
+async function applyAppUpdate() {
+  showToast('Updating app to latest version...');
+  try {
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+  } catch (e) {
+    console.warn('Cache clear error:', e);
+  }
+  // Hard reload with cache-buster timestamp
+  const freshUrl = window.location.pathname + '?v=' + Date.now();
+  window.location.replace(freshUrl);
+}
+
 // ---------- Boot Sequence ----------
 let bootInitialized = false;
 function bootApp() {
   if (bootInitialized) return;
   bootInitialized = true;
   initUserProfile();
+  initAppUpdateEngine();
   fetchEolData();
   setInterval(silentlyRefreshEolCount, 8000);
 }
