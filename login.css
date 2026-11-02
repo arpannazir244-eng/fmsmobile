@@ -345,7 +345,7 @@ body {
   opacity: 0;
   pointer-events: none;
   transition: all 0.25s ease;
-  z-index: 100;
+  z-index: 100000;
   box-shadow: 0 10px 25px rgba(13, 92, 58, 0.4);
   white-space: nowrap;
 }
