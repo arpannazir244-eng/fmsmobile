@@ -241,21 +241,16 @@ const viewHome = document.getElementById('viewHome');
 const viewReports = document.getElementById('viewReports');
 
 document.querySelectorAll('.bottom-nav .nav-tab').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.bottom-nav .nav-tab').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    
+  btn.addEventListener('click', (e) => {
     const targetView = btn.dataset.view;
     if (targetView === 'reports') {
-      if (viewHome) viewHome.hidden = true;
-      if (viewReports) viewReports.hidden = false;
-      renderReportsView();
-      showToast('Showing Reports');
-    } else {
-      if (viewReports) viewReports.hidden = true;
-      if (viewHome) viewHome.hidden = false;
-      showToast('Home');
+      window.location.href = 'report.html';
+      return;
     }
+    document.querySelectorAll('.bottom-nav .nav-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    if (viewHome) viewHome.hidden = false;
+    showToast('Home');
   });
 });
 
@@ -1954,6 +1949,22 @@ function bootApp() {
   initAppUpdateEngine();
   fetchEolData();
   setInterval(silentlyRefreshEolCount, 8000);
+
+  // Handle incoming query params from report.html
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('batch')) {
+      const bId = urlParams.get('batch');
+      setTimeout(() => {
+        openEolSheet();
+        selectBatch(bId);
+      }, 400);
+    } else if (urlParams.get('open') === 'audit') {
+      setTimeout(() => {
+        openEolSheet();
+      }, 400);
+    }
+  } catch (e) {}
 }
 
 document.addEventListener('DOMContentLoaded', bootApp);
