@@ -29,6 +29,18 @@ function initUserProfile() {
 
   const userAvatarText = document.getElementById('userAvatarText');
   if (userAvatarText) userAvatarText.textContent = initials;
+
+  const profileUserName = document.getElementById('profileUserName');
+  if (profileUserName) profileUserName.textContent = cleanName;
+
+  const profileAvatarText = document.getElementById('profileAvatarText');
+  if (profileAvatarText) profileAvatarText.textContent = initials;
+
+  const profileAppVer = document.getElementById('profileAppVer');
+  if (profileAppVer) {
+    const v = typeof getInstalledAppVersion === 'function' ? getInstalledAppVersion() : '1.0.5';
+    profileAppVer.textContent = `v${v}`;
+  }
 }
 
 // ---------- Segmented Switcher (Line Stages <-> Store/Warehouse KPIs) ----------
@@ -75,6 +87,7 @@ const notifOverlay = document.getElementById('notifOverlay');
 const notifCloseBtn = document.getElementById('notifCloseBtn');
 
 function openNotifSheet() {
+  if (typeof closeProfileSheet === 'function') closeProfileSheet();
   if (notifSheet && notifOverlay) {
     notifSheet.classList.add('open');
     notifOverlay.classList.add('open');
@@ -176,14 +189,50 @@ document.querySelectorAll('.side-item').forEach(btn => {
   btn.addEventListener('click', () => handleStageClick(btn));
 });
 
-// ---------- Avatar Button: Direct Logout ----------
+// ---------- User Profile Card Sheet Controls ----------
 const avatarBtn = document.getElementById('avatarBtn');
+const profileSheet = document.getElementById('profileSheet');
+const profileOverlay = document.getElementById('profileOverlay');
+const profileCloseBtn = document.getElementById('profileCloseBtn');
+const profileSyncBtn = document.getElementById('profileSyncBtn');
+const profileLogoutBtn = document.getElementById('profileLogoutBtn');
+
+function openProfileSheet() {
+  if (typeof closeNotifSheet === 'function') closeNotifSheet();
+  if (profileSheet && profileOverlay) {
+    profileSheet.classList.add('open');
+    profileOverlay.classList.add('open');
+  }
+}
+
+function closeProfileSheet() {
+  if (profileSheet && profileOverlay) {
+    profileSheet.classList.remove('open');
+    profileOverlay.classList.remove('open');
+  }
+}
+
 if (avatarBtn) {
-  avatarBtn.addEventListener('click', () => {
-    localStorage.removeItem('nimbus_logged_in');
-    localStorage.removeItem('nimbus_username');
-    showToast('Signed out');
-    setTimeout(() => { window.location.href = 'login.html'; }, 400);
+  avatarBtn.addEventListener('click', openProfileSheet);
+}
+if (profileCloseBtn) profileCloseBtn.addEventListener('click', closeProfileSheet);
+if (profileOverlay) profileOverlay.addEventListener('click', closeProfileSheet);
+
+if (profileSyncBtn) {
+  profileSyncBtn.addEventListener('click', () => {
+    closeProfileSheet();
+    fetchEolData(true);
+  });
+}
+
+if (profileLogoutBtn) {
+  profileLogoutBtn.addEventListener('click', () => {
+    if (confirm('Are you sure you want to sign out?')) {
+      localStorage.removeItem('nimbus_logged_in');
+      localStorage.removeItem('nimbus_username');
+      showToast('Signed out');
+      setTimeout(() => { window.location.href = 'login.html'; }, 400);
+    }
   });
 }
 
