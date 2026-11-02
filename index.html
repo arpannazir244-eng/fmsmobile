@@ -222,6 +222,67 @@
       </div>
     </div>
 
+    <!-- ═══ USER PROFILE CARD / SHEET ═══ -->
+    <div class="profile-overlay" id="profileOverlay"></div>
+    <div class="profile-sheet" id="profileSheet">
+      <div class="profile-sheet-header">
+        <span class="ps-header-title">Inspector Profile</span>
+        <button class="profile-close-btn" id="profileCloseBtn" aria-label="Close profile">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="ps-user-card">
+        <div class="ps-avatar" id="profileAvatarText">QC</div>
+        <div class="ps-user-details">
+          <h3 class="ps-user-name" id="profileUserName">Inspector</h3>
+          <span class="ps-role-badge">Quality Inspector</span>
+          <span class="ps-company-tag">Trio Trend Exports Pvt. Ltd.</span>
+        </div>
+      </div>
+
+      <div class="ps-info-grid">
+        <div class="ps-info-item">
+          <span class="ps-info-label">Active Units</span>
+          <span class="ps-info-val">P-32, S-18, S-37+</span>
+        </div>
+        <div class="ps-info-item">
+          <span class="ps-info-label">System Status</span>
+          <span class="ps-info-val ps-status-online">
+            <span class="ps-status-dot"></span> Online
+          </span>
+        </div>
+        <div class="ps-info-item">
+          <span class="ps-info-label">Current App</span>
+          <span class="ps-info-val" id="profileAppVer">v1.0.5</span>
+        </div>
+        <div class="ps-info-item">
+          <span class="ps-info-label">Access Level</span>
+          <span class="ps-info-val">Full QC Line Entry</span>
+        </div>
+      </div>
+
+      <div class="ps-actions">
+        <button type="button" class="ps-action-btn" id="profileSyncBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-1.19" />
+          </svg>
+          <span>Sync Sheets Data</span>
+        </button>
+
+        <button type="button" class="ps-logout-btn" id="profileLogoutBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          <span>Sign Out</span>
+        </button>
+      </div>
+    </div>
+
     <!-- ═══ TOPBAR / HEADER ═══ -->
     <header class="topbar">
       <button class="icon-btn" id="menuBtn" title="Menu" aria-label="Menu">
@@ -247,7 +308,7 @@
           <span class="notif-dot"></span>
         </button>
 
-        <button class="avatar-badge" id="avatarBtn" title="Sign out" aria-label="Sign out">
+        <button class="avatar-badge" id="avatarBtn" title="Profile" aria-label="User Profile">
           <span id="userAvatarText">QC</span>
         </button>
       </div>
