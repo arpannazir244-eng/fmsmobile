@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#fbf6eb">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Pre AQL Report">
+  <link rel="apple-touch-icon" href="https://res.cloudinary.com/dnrgcigsj/image/upload/v1789365942/trio-dark-logo_ayyhkh.svg">
+  <title>Pre AQL — QC Reports</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css?v=1.0.5">
+  <link rel="stylesheet" href="report.css?v=1.0.5">
+  <script>
+    if (!localStorage.getItem('nimbus_logged_in')) {
+      window.location.href = 'login.html';
+    }
+  </script>
+</head>
+
+<body>
+  <div class="app">
+
+    <!-- ═══ TOPBAR / HEADER ═══ -->
+    <header class="topbar">
+      <a href="report.html" class="icon-btn" id="backToReportsBtn" title="Back to Reports" aria-label="Back to Reports">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+      </a>
+
+      <div class="brand-center">
+        <div class="topbar-brand-row">
+          <img src="https://res.cloudinary.com/dnrgcigsj/image/upload/v1789365942/trio-dark-logo_ayyhkh.svg" alt="Trio Trend Exports Logo" class="topbar-logo-mini">
+          <div class="topbar-brand-text">
+            <span class="brand-title">Pre AQL</span>
+            <span class="brand-sub">Stage 03 QC Report</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <button class="avatar-badge" id="avatarBtn" title="Profile" aria-label="User Profile">
+          <span id="userAvatarText">QC</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ═══ MAIN CONTENT AREA ═══ -->
+    <main class="content" style="padding-top: 14px;">
+
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <h2 class="section-label">Pre AQL Reports</h2>
+          <span class="section-badge">Stage 03</span>
+        </div>
+      </div>
+
+      <div class="stage-standby-card">
+        <div class="ssc-head">
+          <h3 class="ssc-title">Pre-Shipment Sampling Verification</h3>
+          <span class="ssc-badge green">Audit Ready</span>
+        </div>
+        <p class="ssc-desc">
+          Pre-AQL inspections evaluate statistical sampling according to ISO 2859-1 standards before final cartooning.
+        </p>
+
+        <div class="ssc-metrics-row">
+          <div class="ssc-metric-item">
+            <span>Sampling Standard</span>
+            <strong>AQL 2.5</strong>
+          </div>
+          <div class="ssc-metric-item">
+            <span>Inspection Level</span>
+            <strong>Level II</strong>
+          </div>
+          <div class="ssc-metric-item">
+            <span>Tolerance</span>
+            <strong>Ac 0 / Re 1</strong>
+          </div>
+        </div>
+
+        <div class="empty-state" style="padding: 24px 0;">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--forest-green)" stroke-width="1.8" style="margin: 0 auto 10px; display:block;">
+            <rect x="5" y="3" width="14" height="18" rx="2" />
+            <path d="M9 7h6M9 11h6M9 15h4" />
+          </svg>
+          <div style="font-weight: 700; color: var(--forest-green); font-size: 13px;">Pre-AQL sampling queue is synchronized</div>
+          <small style="color: var(--text-sub); display:block; margin-top:6px;">Batches passing End of Line enter this sampling stage.</small>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- ═══ BOTTOM NAVIGATION BAR ═══ -->
+    <nav class="bottom-nav">
+      <a href="index.html" class="nav-tab" aria-label="Home">
+        <span class="nav-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+        </span>
+        <span>Home</span>
+      </a>
+
+      <a href="index.html?open=audit" class="nav-center-action" id="navCenterAuditBtn" aria-label="Audit End of Line">
+        <div class="action-circle">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </div>
+      </a>
+
+      <a href="report.html" class="nav-tab active" aria-label="Reports">
+        <span class="nav-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 20V10M12 20V4M6 20v-6"></path>
+          </svg>
+        </span>
+        <span>Reports</span>
+      </a>
+    </nav>
+
+    <div class="toast" id="toast"></div>
+
+  </div>
+
+  <script src="db.js?v=1.0.5"></script>
+  <script>
+    const username = localStorage.getItem('nimbus_username') || 'Inspector';
+    const cleanName = username.trim();
+    const parts = cleanName.split(' ');
+    const initials = parts.length > 1 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : cleanName.slice(0, 2).toUpperCase();
+    const uEl = document.getElementById('userAvatarText');
+    if (uEl) uEl.textContent = initials;
+  </script>
+</body>
+
+</html>
