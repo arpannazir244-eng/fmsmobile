@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#fbf6eb">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="FMS Reports">
+  <link rel="apple-touch-icon" href="https://res.cloudinary.com/dnrgcigsj/image/upload/v1789365942/trio-dark-logo_ayyhkh.svg">
+  <title>FMS Workspace — Inspection Reports</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css?v=1.2.0">
+  <link rel="stylesheet" href="report.css?v=1.3.3">
+  <script>
+    if (!localStorage.getItem('nimbus_logged_in')) {
+      window.location.href = 'login.html';
+    }
+  </script>
+</head>
+
+<body>
+  <div class="app" style="padding-top: calc(62px + env(safe-area-inset-top));">
+
+    <!-- ═══ NOTIFICATION SHEET ═══ -->
+    <div class="notif-overlay" id="notifOverlay"></div>
+    <div class="notif-sheet" id="notifSheet">
+      <div class="notif-sheet-header">
+        <div class="notif-header-title">
+          <span>Notifications</span>
+        </div>
+        <button class="notif-close-btn" id="notifCloseBtn" aria-label="Close">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="notif-list">
+        <div class="notif-item">
+          <div class="notif-item-icon">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <div class="notif-item-body">
+            <strong>Google Sheets Synced</strong>
+            <p>Production batch inventory and user permissions are live.</p>
+            <small>Active</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ USER PROFILE CARD / SHEET ═══ -->
+    <div class="profile-overlay" id="profileOverlay"></div>
+    <div class="profile-sheet" id="profileSheet">
+      <div class="profile-sheet-header">
+        <span class="ps-header-title">Inspector Profile</span>
+        <button class="profile-close-btn" id="profileCloseBtn" aria-label="Close profile">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="ps-user-card">
+        <div class="ps-avatar" id="profileAvatarText">QC</div>
+        <div class="ps-user-details">
+          <h3 class="ps-user-name" id="profileUserName">Inspector</h3>
+          <span class="ps-role-badge">Quality Inspector</span>
+          <span class="ps-company-tag">Trio Trend Exports Pvt. Ltd.</span>
+        </div>
+      </div>
+
+      <div class="ps-info-grid">
+        <div class="ps-info-item">
+          <span class="ps-info-label">Active Units</span>
+          <span class="ps-info-val">P-32, S-18, S-37+</span>
+        </div>
+        <div class="ps-info-item">
+          <span class="ps-info-label">System Status</span>
+          <span class="ps-info-val ps-status-online">
+            <span class="ps-status-dot"></span> Online
+          </span>
+        </div>
+        <div class="ps-info-item">
+          <span class="ps-info-label">Current App</span>
+          <span class="ps-info-val" id="profileAppVer">v1.0.7</span>
+        </div>
+        <div class="ps-info-item">
+          <span class="ps-info-label">Access Level</span>
+          <span class="ps-info-val">Full QC Line Entry</span>
+        </div>
+      </div>
+
+      <div class="ps-actions">
+        <button type="button" class="ps-action-btn" id="profileSyncBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-1.19" />
+          </svg>
+          <span>Sync Sheets Data</span>
+        </button>
+
+        <button type="button" class="ps-logout-btn" id="profileLogoutBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          <span>Sign Out</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ═══ TOPBAR / HEADER ═══ -->
+    <header class="topbar" style="position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 420px; z-index: 85; box-sizing: border-box; background-color: #fbf6eb;">
+      <a href="index.html" class="icon-btn" id="backToHomeBtn" title="Back to Home" aria-label="Back to Home">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+      </a>
+
+      <div class="brand-center">
+        <div class="topbar-brand-row">
+          <img src="https://res.cloudinary.com/dnrgcigsj/image/upload/v1789365942/trio-dark-logo_ayyhkh.svg" alt="Trio Trend Exports Logo" class="topbar-logo-mini">
+          <div class="topbar-brand-text">
+            <span class="brand-title">QC Reports</span>
+            <span class="brand-sub">Trio Trend Exports</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <button class="icon-btn notif-btn" id="bellBtn" title="Notifications" aria-label="Notifications">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </svg>
+          <span class="notif-dot"></span>
+        </button>
+
+        <button class="avatar-badge" id="avatarBtn" title="Profile" aria-label="User Profile">
+          <span id="userAvatarText">QC</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ═══ MAIN CONTENT AREA ═══ -->
+    <main class="content" style="padding-top: 14px;">
+
+      <!-- Section Header -->
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <h2 class="section-label">Inspection Reports</h2>
+          <span class="section-badge">4 Stages</span>
+        </div>
+        <button class="refresh-pill-btn" id="repSyncBtn" title="Sync Report Data">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-1.19" />
+          </svg>
+          <span>Sync</span>
+        </button>
+      </div>
+
+      <!-- ── 4-STAGE KPI CARDS (Each links to its separate report page) ── -->
+      <div class="report-stages-grid clay-grid">
+
+        <!-- Stage 1: End of Line -->
+        <a href="report-eol.html" class="stage-card stage-card--primary report-stage-card" id="stageCardEol">
+          <div class="stage-card-header">
+            <span class="stage-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                <path d="M6 3v18M6 4h9l-2 3 2 3H6" />
+              </svg>
+            </span>
+            <div class="stage-count">
+              <span class="stage-count-num" id="repEolCountNum">219</span>
+            </div>
+          </div>
+          <div class="stage-card-info">
+            <h3>END LINE QC-FMS</h3>
+            <p class="stage-sub">Deep Quality & Defect Reasons Analysis</p>
+          </div>
+          <div class="stage-footer">
+            <span class="stage-status-text">Open Report</span>
+            <span class="stage-arrow" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </span>
+          </div>
+        </a>
+
+        <!-- Stage 2: Edge Paint -->
+        <a href="report-edge-paint.html" class="stage-card report-stage-card" id="stageCardEdgePaint">
+          <div class="stage-card-header">
+            <span class="stage-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                <path d="M12 2l4 4-8 8-4-4 8-8zM18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4" />
+              </svg>
+            </span>
+            <span class="stage-num-badge">02</span>
+          </div>
+          <div class="stage-card-info">
+            <h3>EDGE PAINT</h3>
+            <p class="stage-sub">Edge Finishing Reports</p>
+          </div>
+          <div class="stage-footer">
+            <span class="stage-status-text">Open Report</span>
+            <span class="stage-arrow" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </span>
+          </div>
+        </a>
+
+        <!-- Stage 3: Pre AQL -->
+        <a href="report-pre-aql.html" class="stage-card report-stage-card" id="stageCardPreAql">
+          <div class="stage-card-header">
+            <span class="stage-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                <rect x="5" y="3" width="14" height="18" rx="2" />
+                <path d="M9 7h6M9 11h6M9 15h4" />
+              </svg>
+            </span>
+            <span class="stage-num-badge">03</span>
+          </div>
+          <div class="stage-card-info">
+            <h3>PRE AQL</h3>
+            <p class="stage-sub">Sampling Check Reports</p>
+          </div>
+          <div class="stage-footer">
+            <span class="stage-status-text">Open Report</span>
+            <span class="stage-arrow" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </span>
+          </div>
+        </a>
+
+        <!-- Stage 4: Post AQL -->
+        <a href="report-post-aql.html" class="stage-card report-stage-card" id="stageCardPostAql">
+          <div class="stage-card-header">
+            <span class="stage-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                <path d="M9 12l2 2 4-4" />
+              </svg>
+            </span>
+            <span class="stage-num-badge">04</span>
+          </div>
+          <div class="stage-card-info">
+            <h3>POST AQL</h3>
+            <p class="stage-sub">Packaging Release Reports</p>
+          </div>
+          <div class="stage-footer">
+            <span class="stage-status-text">Open Report</span>
+            <span class="stage-arrow" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </span>
+          </div>
+        </a>
+
+      </div>
+
+    </main>
+
+    <!-- ═══ BOTTOM NAVIGATION BAR ═══ -->
+    <nav class="bottom-nav">
+      <a href="index.html" class="nav-tab" aria-label="Home">
+        <span class="nav-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+        </span>
+        <span class="nav-label">Home</span>
+      </a>
+
+      <!-- Center Action Button -->
+      <a href="end-of-line.html" class="nav-center-action" id="navCenterAuditBtn" aria-label="Audit End of Line">
+        <div class="action-circle">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </div>
+      </a>
+
+      <a href="report.html" class="nav-tab active" aria-label="Reports">
+        <span class="nav-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 20V10M12 20V4M6 20v-6"></path>
+          </svg>
+        </span>
+        <span class="nav-label">Reports</span>
+      </a>
+    </nav>
+
+    <!-- ═══ TOAST ═══ -->
+    <div class="toast" id="toast"></div>
+
+  </div>
+
+  <script src="db.js?v=1.2.4"></script>
+  <script src="report.js?v=1.3.8"></script>
+</body>
+
+</html>
