@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#faf5ea">
+  <title>End of Line - Quality Inspection</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=2.6.0">
+</head>
+
+<body>
+  <div class="app" style="padding-top: calc(62px + env(safe-area-inset-top));">
+
+    <!-- ═══ NOTIFICATION DRAWER / SHEET ═══ -->
+    <div class="notif-overlay" id="notifOverlay"></div>
+    <div class="notif-sheet" id="notifSheet">
+      <div class="notif-sheet-header">
+        <span class="nsh-title">Notifications</span>
+        <button class="notif-close-btn" id="notifCloseBtn" aria-label="Close notifications">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="notif-list">
+        <div class="notif-item">
+          <div class="notif-item-icon">✓</div>
+          <div class="notif-item-body">
+            <strong>System Ready</strong>
+            <p>End of Line inspection terminal is online and active.</p>
+            <small>Just now</small>
+          </div>
+        </div>
+        <div class="notif-item">
+          <div class="notif-item-icon">✓</div>
+          <div class="notif-item-body">
+            <strong>Google Sheets Synced</strong>
+            <p>Production batch inventory and user permissions are live.</p>
+            <small>Active</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ USER PROFILE CARD / SHEET ═══ -->
+    <div class="profile-overlay" id="profileOverlay"></div>
+    <div class="profile-sheet" id="profileSheet">
+      <div class="profile-sheet-header">
+        <span class="ps-header-title">Inspector Profile</span>
+        <button class="profile-close-btn" id="profileCloseBtn" aria-label="Close profile">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="ps-user-card">
+        <div class="ps-avatar" id="profileAvatarText">QC</div>
+        <div class="ps-user-details">
+          <h3 class="ps-user-name" id="profileUserName">Inspector</h3>
+          <span class="ps-role-badge">Quality Inspector</span>
+          <span class="ps-company-tag">Trio Trend Exports Pvt. Ltd.</span>
+        </div>
+      </div>
+
+      <div class="ps-info-grid">
+        <div class="ps-info-item">
+          <span class="ps-info-label">Active Units</span>
+          <span class="ps-info-val">P-32, S-18, S-37+</span>
+        </div>
+        <div class="ps-info-item">
+          <span class="ps-info-label">System Status</span>
+          <span class="ps-info-val ps-status-online">
+            <span class="ps-status-dot"></span> Online
+          </span>
+        </div>
+        <div class="ps-info-item">
+          <span class="ps-info-label">Current App</span>
+          <span class="ps-info-val" id="profileAppVer">v1.1.2</span>
+        </div>
+        <div class="ps-info-item">
+          <span class="ps-info-label">Access Level</span>
+          <span class="ps-info-val">Full QC Line Entry</span>
+        </div>
+      </div>
+
+      <div class="ps-actions">
+        <button type="button" class="ps-action-btn" id="profileSyncBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-1.19" />
+          </svg>
+          <span>Sync Sheets Data</span>
+        </button>
+
+        <button type="button" class="ps-logout-btn" id="profileLogoutBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          <span>Sign Out</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ═══ TOPBAR / HEADER ═══ -->
+    <header class="topbar" style="position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 420px; z-index: 85; box-sizing: border-box; background-color: #fbf6eb;">
+      <a href="index.html" class="icon-btn" id="backToHomeBtn" title="Back to Home" aria-label="Back to Home">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+      </a>
+
+      <div class="brand-center">
+        <div class="topbar-brand-row">
+          <img src="https://res.cloudinary.com/dnrgcigsj/image/upload/v1789365942/trio-dark-logo_ayyhkh.svg" alt="Trio Trend Exports Logo" class="topbar-logo-mini">
+          <div class="topbar-brand-text">
+            <span class="brand-title">End of Line</span>
+            <span class="brand-sub">Stage 01 QC Inspection</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <button class="icon-btn notif-btn" id="bellBtn" title="Notifications" aria-label="Notifications">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </svg>
+          <span class="notif-dot"></span>
+        </button>
+
+        <button class="avatar-badge" id="avatarBtn" title="Profile" aria-label="User Profile">
+          <span id="userAvatarText">QC</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ═══ MAIN CONTENT AREA (Dedicated Full Inspection Page) ═══ -->
+    <main class="content eol-main-content">
+
+      <!-- Inspection Form Container -->
+      <div class="form-sheet eol-standalone-sheet open" id="eolSheet">
+
+        <form class="sheet-form" id="eolForm">
+          <div class="sheet-scroll-area">
+
+            <!-- Section 1: Batch Details -->
+            <div class="form-section-banner">
+              <div class="fs-title-wrap">
+                <span class="fs-dot"></span>
+                <h3>Batch Details</h3>
+              </div>
+              <span class="fs-badge">Auto-Fill</span>
+            </div>
+
+            <div class="batch-complete-warning" id="batchCompleteWarning" role="alert" hidden>
+              <span class="batch-complete-warning__icon">✓</span>
+              <div>
+                <strong>Warehouse transfer complete</strong>
+                <p>All quantity for this Batch ID has already been sent to WH.</p>
+              </div>
+            </div>
+
+            <!-- Batch ID Custom Dropdown -->
+            <div class="form-group">
+              <label class="form-label" for="batchTrigger">
+                <span>Batch ID</span>
+                <span class="req-star">*</span>
+              </label>
+              <div class="input-wrapper custom-dropdown" id="batchDropdown">
+                <div class="form-input dropdown-trigger" id="batchTrigger" tabindex="0">
+                  <div class="trigger-left">
+                    <span id="batchTriggerText">Select Batch ID...</span>
+                  </div>
+                  <span class="trigger-arrow">&darr;</span>
+                </div>
+
+                <div class="dropdown-menu" id="batchMenu">
+                  <div class="dropdown-search">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="11" cy="11" r="8" />
+                      <path d="M21 21l-4.3-4.3" />
+                    </svg>
+                    <input type="text" id="batchSearch" placeholder="Search batch number...">
+                  </div>
+
+                  <div class="dropdown-unit-filters">
+                    <button type="button" class="unit-filter-btn active" data-unit="ALL">All</button>
+                    <button type="button" class="unit-filter-btn" data-unit="P-32">P-32</button>
+                    <button type="button" class="unit-filter-btn" data-unit="S-18">S-18</button>
+                    <button type="button" class="unit-filter-btn" data-unit="S-37">S-37</button>
+                    <button type="button" class="unit-filter-btn" data-unit="S-29">S-29</button>
+                    <button type="button" class="unit-filter-btn" data-unit="14-B">14-B</button>
+                  </div>
+
+                  <ul class="dropdown-list" id="batchList">
+                    <li class="dropdown-item disabled">Loading batches...</li>
+                  </ul>
+                </div>
+
+                <input type="hidden" id="eol_batch" name="eol_batch">
+              </div>
+            </div>
+
+            <!-- Style & Colour -->
+            <div class="form-row-2">
+              <div class="form-group">
+                <label class="form-label">Style No.</label>
+                <input type="text" class="form-input readonly-input" id="eol_style" placeholder="ST-001" readonly required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Colour</label>
+                <input type="text" class="form-input readonly-input" id="eol_colour" placeholder="Colour" readonly required>
+              </div>
+            </div>
+
+            <!-- Available Qty & PO -->
+            <div class="form-row-2">
+              <div class="form-group">
+                <label class="form-label">Available Qty</label>
+                <input type="number" class="form-input readonly-input num-mono" id="eol_qty" placeholder="0" readonly required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">PO Number</label>
+                <input type="text" class="form-input readonly-input" id="eol_po" placeholder="PO-0000" readonly required>
+              </div>
+            </div>
+
+            <!-- SKU & Floor -->
+            <div class="form-row-2">
+              <div class="form-group">
+                <label class="form-label">SKU</label>
+                <input type="text" class="form-input readonly-input" id="eol_sku" placeholder="SKU-000" readonly required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Floor No.</label>
+                <input type="number" class="form-input" id="eol_floor" placeholder="e.g. 2">
+              </div>
+            </div>
+
+            <!-- Unit & Fabricator -->
+            <div class="form-row-2">
+              <div class="form-group">
+                <label class="form-label">Unit</label>
+                <input type="text" class="form-input readonly-input" id="eol_unit" placeholder="Unit" readonly required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Fabricator</label>
+                <input type="text" class="form-input readonly-input" id="eol_fabricator" placeholder="Fabricator" readonly required>
+              </div>
+            </div>
+
+            <!-- QC Inspector & ETD -->
+            <div class="form-row-2">
+              <div class="form-group">
+                <label class="form-label">End-Line QC</label>
+                <input type="text" class="form-input readonly-input" id="eol_qcname" placeholder="QC Name" readonly required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">ETD</label>
+                <div class="date-field-wrap">
+                  <input type="date" class="form-input" id="eol_etd" required>
+                  <span class="date-display" id="eol_etd_display">DD/MM/YYYY</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Checking Date -->
+            <div class="form-group">
+              <label class="form-label">Checking Date</label>
+              <div class="date-field-wrap">
+                <input type="date" class="form-input" id="eol_checkdate" required>
+                <span class="date-display" id="eol_checkdate_display">DD/MM/YYYY</span>
+              </div>
+            </div>
+
+            <!-- ─── CURVED PEACH SECTION (QC Audit & Dispatch) ─── -->
+            <div class="peach-qc-card">
+              <div class="peach-qc-header">
+                <h3>QC Audit & Dispatch</h3>
+                <span class="pass-rate-pill" id="auditPassRateText">100% Pass</span>
+              </div>
+
+              <!-- Stepper Counters -->
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label class="form-label" for="eol_checked">Checked Qty</label>
+                  <div class="stepper-counter-widget">
+                    <button type="button" class="stepper-btn" id="btnCheckedMinus" aria-label="Decrease">&minus;</button>
+                    <input type="number" class="stepper-val-input num-mono" id="eol_checked" value="0" min="0" step="1" inputmode="numeric" placeholder="0" autocomplete="off" required>
+                    <span id="checkedDisplayVal" style="display:none;" aria-hidden="true">0</span>
+                    <button type="button" class="stepper-btn" id="btnCheckedPlus" aria-label="Increase">&plus;</button>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="eol_repair">Repair Qty</label>
+                  <div class="stepper-counter-widget">
+                    <button type="button" class="stepper-btn" id="btnRepairMinus" aria-label="Decrease">&minus;</button>
+                    <input type="number" class="stepper-val-input num-mono" id="eol_repair" value="0" min="0" step="1" inputmode="numeric" placeholder="0" autocomplete="off">
+                    <span id="repairDisplayVal" style="display:none;" aria-hidden="true">0</span>
+                    <button type="button" class="stepper-btn" id="btnRepairPlus" aria-label="Increase">&plus;</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Sent to Warehouse</label>
+                <input type="number" class="form-input readonly-input num-mono" id="eol_wh" placeholder="0" readonly>
+              </div>
+
+              <!-- Repair Category (Multi-Select Dropdown) -->
+              <div class="form-group" id="repairCategoryGroup">
+                <label class="form-label" for="categoryTrigger">
+                  Repair Category <span class="required-star" id="repairCategoryReq" style="display:none; color: #dc2626; font-weight: 800;">*</span>
+                </label>
+                <div class="input-wrapper custom-dropdown" id="categoryDropdown">
+                  <div class="form-input dropdown-trigger" id="categoryTrigger" tabindex="0">
+                    <div class="trigger-left" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: calc(100% - 24px);">
+                      <span id="categoryTriggerText" class="placeholder-text" style="color: var(--text-sub);">Select Repair Category...</span>
+                    </div>
+                    <span class="trigger-arrow">&darr;</span>
+                  </div>
+
+                  <div class="dropdown-menu multi-select-menu" id="categoryMenu">
+                    <div class="multi-select-header" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; border-bottom: 1px solid rgba(13,92,58,0.08); margin-bottom: 6px;">
+                      <span style="font-size: 11px; font-weight: 700; color: var(--text-muted);">Select Categories</span>
+                      <button type="button" class="btn-clear-selection" id="categoryClearBtn" style="background: none; border: none; font-size: 11px; color: var(--forest-green); font-weight: 700; cursor: pointer; padding: 0;">Clear</button>
+                    </div>
+                    <ul class="dropdown-list" id="categoryList">
+                      <li class="dropdown-item multi-item" data-value="Stitching">
+                        <span class="item-name">Stitching</span>
+                        <span class="item-checkbox"></span>
+                      </li>
+                      <li class="dropdown-item multi-item" data-value="Edge-Paint">
+                        <span class="item-name">Edge-Paint</span>
+                        <span class="item-checkbox"></span>
+                      </li>
+                      <li class="dropdown-item multi-item" data-value="Workmanship">
+                        <span class="item-name">Workmanship</span>
+                        <span class="item-checkbox"></span>
+                      </li>
+                      <li class="dropdown-item multi-item" data-value="Finishing">
+                        <span class="item-name">Finishing</span>
+                        <span class="item-checkbox"></span>
+                      </li>
+                      <li class="dropdown-item multi-item" data-value="Hardware">
+                        <span class="item-name">Hardware</span>
+                        <span class="item-checkbox"></span>
+                      </li>
+                      <li class="dropdown-item multi-item" data-value="Assembly">
+                        <span class="item-name">Assembly</span>
+                        <span class="item-checkbox"></span>
+                      </li>
+                      <li class="dropdown-item multi-item" data-value="Material">
+                        <span class="item-name">Material</span>
+                        <span class="item-checkbox"></span>
+                      </li>
+                    </ul>
+                    <div style="padding-top: 6px; border-top: 1px solid rgba(13,92,58,0.08); margin-top: 6px; text-align: right;">
+                      <button type="button" id="categoryDoneBtn" class="primary-pill-btn" style="padding: 4px 14px; font-size: 11px; height: auto; border-radius: 999px;">Done</button>
+                    </div>
+                  </div>
+
+                  <input type="hidden" id="eol_repair_category" name="eol_repair_category">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Repairing Reason</label>
+                <textarea class="form-input form-textarea" id="eol_reason" placeholder="Notes or defect reasons..." rows="2"></textarea>
+              </div>
+
+              <div style="display:none;" id="auditSummaryDetail"></div>
+              <div style="display:none;" id="auditSummaryWh"></div>
+            </div>
+
+          </div>
+
+          <!-- Sticky Bottom Form Actions -->
+          <div class="form-actions-sticky">
+            <button type="submit" class="form-btn-submit" id="eolSubmitBtn">Submit Verification</button>
+            <button type="reset" class="form-btn-reset" id="eolResetBtn" title="Reset Form">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
+              </svg>
+            </button>
+          </div>
+
+        </form>
+      </div>
+
+    </main>
+
+    <!-- ═══ TOAST NOTIFICATION ═══ -->
+    <div class="toast" id="toast"></div>
+
+  </div>
+
+  <script src="xlsx.full.min.js?v=1.0.5"></script>
+  <script src="jspdf.umd.min.js?v=1.0.5"></script>
+  <script src="jspdf.plugin.autotable.min.js?v=1.0.5"></script>
+  <script src="endline_qc_data.js?v=2.5.1"></script>
+  <script src="db.js?v=2.6.0"></script>
+  <script src="main.js?v=2.6.0"></script>
+</body>
+
+</html>
