@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#fbf6eb">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>FMS AI — QC Intelligence Copilot</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Core App Stylesheets -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css?v=2.7.0">
+  <link rel="stylesheet" href="fms-ai.css?v=1.1.0">
+</head>
+<body>
+  <div class="app" style="padding-top: calc(62px + env(safe-area-inset-top));">
+
+    <!-- ═══ STANDARD APP TOPBAR (PERFECT 420PX MATCH) ═══ -->
+    <header class="topbar" style="position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 420px; z-index: 85; box-sizing: border-box; background-color: #fbf6eb;">
+      <a href="index.html" class="icon-btn" id="backToHomeBtn" title="Back to Home" aria-label="Back to Home">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+      </a>
+
+      <div class="brand-center">
+        <div class="topbar-brand-row">
+          <img src="https://res.cloudinary.com/dnrgcigsj/image/upload/v1789365942/trio-dark-logo_ayyhkh.svg" alt="Trio Trend Exports Logo" class="topbar-logo-mini">
+          <div class="topbar-brand-text">
+            <span class="brand-title">FMS AI</span>
+            <span class="brand-sub">QC Intelligence Copilot</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <button class="icon-btn" id="aiClearChatBtn" title="Reset / Clear Chat" aria-label="Reset Chat">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-1.19" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- ═══ MAIN CHAT SCROLL AREA (STANDARD .content PADDING) ═══ -->
+    <main class="content ai-content-area" id="aiChatScroll" style="padding-top: 14px; padding-bottom: calc(160px + env(safe-area-inset-bottom));">
+      <div class="ai-chat-thread" id="aiChatMessages">
+
+        <!-- Welcome Hero Greeting Card (Matches my-rep-hero exactly) -->
+        <section class="ai-hero-card" id="aiWelcomeCard">
+          <div class="ai-hero-top">
+            <div class="ai-hero-user-block">
+              <div class="ai-hero-avatar">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path>
+                  <path d="M5 3v4"></path>
+                  <path d="M19 17v4"></path>
+                  <path d="M3 5h4"></path>
+                  <path d="M17 19h4"></path>
+                </svg>
+              </div>
+              <div class="ai-hero-name-wrap">
+                <span class="ai-hero-greeting">AI QC Copilot</span>
+                <span class="ai-hero-username" id="aiUserNameGreet">Inspector</span>
+              </div>
+            </div>
+
+            <div class="ai-hero-role-pill">
+              <span class="ai-hero-dot"></span>
+              <span id="aiLiveStatus">Live (5s)</span>
+            </div>
+          </div>
+
+          <div class="ai-hero-desc">
+            I am <strong>FMS AI</strong>. Ask me anything in <strong>English</strong> or <strong>বাংলা</strong> about batches, defects, inspectors, or units.
+          </div>
+
+          <!-- Quick Topic Chips Grid -->
+          <div class="ai-quick-topics-grid">
+            <button type="button" class="ai-topic-chip" data-prompt="Status of Batch TT-0854">
+              <span class="ai-topic-icon">📦</span>
+              <span class="ai-topic-text">Batch TT-0854</span>
+            </button>
+            <button type="button" class="ai-topic-chip" data-prompt="What are the top 5 defect causes?">
+              <span class="ai-topic-icon">🔥</span>
+              <span class="ai-topic-text">Top Defects</span>
+            </button>
+            <button type="button" class="ai-topic-chip" data-prompt="Show Arun Bairagi inspection report">
+              <span class="ai-topic-icon">👤</span>
+              <span class="ai-topic-text">Arun Bairagi</span>
+            </button>
+            <button type="button" class="ai-topic-chip" data-prompt="How is Unit P-32 performing?">
+              <span class="ai-topic-icon">🏭</span>
+              <span class="ai-topic-text">Unit P-32</span>
+            </button>
+            <button type="button" class="ai-topic-chip" data-prompt="Give me overall End of Line summary">
+              <span class="ai-topic-icon">📊</span>
+              <span class="ai-topic-text">EOL Summary</span>
+            </button>
+            <button type="button" class="ai-topic-chip" data-prompt="Show my inspections">
+              <span class="ai-topic-icon">🙋</span>
+              <span class="ai-topic-text">My Report</span>
+            </button>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- Typing Indicator -->
+      <div class="ai-typing-wrap" id="aiTypingIndicator" style="display: none;">
+        <div class="ai-typing-avatar">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path>
+          </svg>
+        </div>
+        <div class="ai-typing-bubble">
+          <span class="ai-typing-dot"></span>
+          <span class="ai-typing-dot"></span>
+          <span class="ai-typing-dot"></span>
+        </div>
+      </div>
+      <!-- Scroll Anchor for complete visibility above dock -->
+      <div id="chatAnchor" class="chat-bottom-anchor"></div>
+    </main>
+
+    <!-- ═══ INPUT DOCK (FROZEN ABOVE BOTTOM NAV, EXACT 420PX ALIGNMENT) ═══ -->
+    <div class="ai-input-dock">
+      <!-- Quick suggestions pill scroll bar -->
+      <div class="ai-pills-bar" id="aiPillsBar">
+        <button type="button" class="ai-pill-btn" data-prompt="Batch TT-0854">Batch TT-0854</button>
+        <button type="button" class="ai-pill-btn" data-prompt="Top Defect Reasons">Top Defect Reasons</button>
+        <button type="button" class="ai-pill-btn" data-prompt="Unit P-32 vs S-37">Unit Quality</button>
+        <button type="button" class="ai-pill-btn" data-prompt="Arun Bairagi Report">Arun Bairagi</button>
+        <button type="button" class="ai-pill-btn" data-prompt="AQL 1.5 Standard">AQL Standard</button>
+        <button type="button" class="ai-pill-btn" data-prompt="My Report">My Report</button>
+      </div>
+
+      <!-- Chat Input Form -->
+      <form class="ai-chat-form" id="aiChatForm" onsubmit="return false;">
+        <div class="ai-input-field-wrap">
+          <span class="ai-input-icon">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path>
+            </svg>
+          </span>
+          <input type="text" id="aiPromptInput" class="ai-prompt-input" placeholder="Ask FMS AI about batches, defects, units..." autocomplete="off">
+          <button type="button" class="ai-input-clear-btn" id="aiInputClearBtn" style="display: none;" title="Clear input">
+            &times;
+          </button>
+        </div>
+        <button type="submit" class="ai-send-btn" id="aiSendBtn" aria-label="Send Message" disabled>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+          </svg>
+        </button>
+      </form>
+    </div>
+
+    <!-- ═══ BOTTOM NAVIGATION BAR (EXACT 420PX MATCH) ═══ -->
+    <nav class="bottom-nav">
+      <a href="index.html" class="nav-tab" aria-label="Home" style="text-decoration: none;">
+        <span class="nav-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+        </span>
+        <span class="nav-label">Home</span>
+      </a>
+
+      <!-- Center Action Button (FMS AI Active) -->
+      <a href="fms-ai.html" class="nav-center-action active-nav-ai" id="navCenterAiBtn" aria-label="FMS AI" title="FMS AI">
+        <div class="action-circle ai-action-circle active-ai-circle">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path>
+            <path d="M5 3v4"></path>
+            <path d="M19 17v4"></path>
+            <path d="M3 5h4"></path>
+            <path d="M17 19h4"></path>
+          </svg>
+        </div>
+      </a>
+
+      <a href="report.html" class="nav-tab" data-view="reports" aria-label="Reports" style="text-decoration: none;">
+        <span class="nav-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 20V10M12 20V4M6 20v-6"></path>
+          </svg>
+        </span>
+        <span class="nav-label">Reports</span>
+      </a>
+    </nav>
+
+  </div>
+
+  <!-- Real Data Sources & IndexedDB Core -->
+  <script src="db.js"></script>
+  <script src="end_of_line_data.js"></script>
+  <script src="endline_qc_data.js"></script>
+  <script src="production_summary_data.js"></script>
+  <script src="fms-ai.js"></script>
+</body>
+</html>
