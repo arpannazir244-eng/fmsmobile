@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -16,6 +16,12 @@
     href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="style.css?v=2.6.0">
+  <script>
+    // Auth guard: bounce to login if not signed in
+    if (!localStorage.getItem('nimbus_logged_in')) {
+      window.location.href = 'login.html';
+    }
+  </script>
 </head>
 
 <body>
@@ -439,9 +445,9 @@
   <script src="xlsx.full.min.js?v=1.0.5"></script>
   <script src="jspdf.umd.min.js?v=1.0.5"></script>
   <script src="jspdf.plugin.autotable.min.js?v=1.0.5"></script>
-  <script src="endline_qc_data.js?v=2.5.1"></script>
-  <script src="db.js?v=2.7.0"></script>
-  <script src="main.js?v=2.7.1"></script>
+  <script src="endline_qc_data.js?v=2.6.0"></script>
+  <script src="db.js?v=2.9.5"></script>
+  <script src="main.js?v=2.9.15"></script>
 </body>
 
 </html>
