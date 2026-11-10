@@ -3818,7 +3818,7 @@
   border-radius: 14px;
   overflow: hidden;
   box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.55);
-  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.2s ease;
 }
 
 /* Default on Mobile Portrait: Rotated 90deg Landscape */
@@ -3925,6 +3925,149 @@
   background: #ef4444;
   border-color: #dc2626;
   color: #ffffff;
+}
+
+/* Interactive Filters Bar inside Fullscreen Modal */
+.chart-fs-filters-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 6px 12px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.cfs-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.cfs-filter-row::-webkit-scrollbar {
+  display: none;
+}
+
+.cfs-filter-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.cfs-filter-label svg {
+  color: #0b5c39;
+}
+
+.cfs-pills-scroll {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 1px 0;
+  scrollbar-width: none;
+}
+
+.cfs-pills-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.cfs-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4.5px;
+  padding: 3.5px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  white-space: nowrap;
+  cursor: pointer;
+  flex-shrink: 0;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.14s ease;
+}
+
+.cfs-pill:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.cfs-pill:active {
+  transform: scale(0.96);
+}
+
+.cfs-pill.active {
+  background: #0b5c39;
+  color: #ffffff;
+  border-color: #0b5c39;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(11, 92, 57, 0.28);
+}
+
+.cfs-pill-dot {
+  width: 6.5px;
+  height: 6.5px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.cfs-pill.active .cfs-pill-dot {
+  border: 1px solid #ffffff;
+}
+
+.cfs-reset-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 9px;
+  border: 1px dashed #ef4444;
+  background: #fef2f2;
+  color: #dc2626;
+  white-space: nowrap;
+  cursor: pointer;
+  margin-left: auto;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.cfs-reset-btn:hover {
+  background: #dc2626;
+  color: #ffffff;
+  border-style: solid;
+}
+
+.cfs-active-filter-indicator {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #0b5c39;
+  background: rgba(11, 92, 57, 0.08);
+  padding: 2px 7px;
+  border-radius: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
 }
 
 /* Legend Strip inside Fullscreen Modal */
@@ -4414,9 +4557,40 @@
   cursor: pointer;
   transition: opacity 0.2s ease;
 }
-
 .brand-chart-wrap .brand-col-bar:hover {
   opacity: 0.88;
+}
+
+/* Prevent tap highlight flicker, unwanted text selection and jitter during chart interaction */
+svg, 
+.chart-card, 
+.chart-body, 
+.brand-chart-svg, 
+.insp-chart-svg, 
+.col-chart-col, 
+.brand-col-bar, 
+.uc-col-bar, 
+.trend-col-bar,
+.standard-cat-card,
+.cfs-pill, 
+.brand-pill, 
+.brand-cat-pill, 
+.trend-cat-chip, 
+.uc-unit-pill, 
+.uc-cat-pill {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.cfs-filter-row,
+.cfs-pills-scroll,
+.brand-pills-wrap,
+.trend-cat-pills,
+.uc-unit-selector,
+.uc-cat-selector {
+  touch-action: pan-x;
 }
 
 
