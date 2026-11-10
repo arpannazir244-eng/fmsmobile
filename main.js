@@ -40,11 +40,24 @@ function initUserProfile() {
     profileAppVer.textContent = `v${v}`;
   }
 
+  // Pre-fill End-Line QC input with logged-in user name
+  applyLoggedInUserToEolQcName();
+
   // Refresh counts for the active user if data is already in cache
   if (eolDataCache) {
     eolDataCache.eolEntryCount = getCurrentUserEolEntryCount(eolDataCache);
     animateEolStageCount(eolDataCache.eolEntryCount);
     updateEolTodayCount(getCurrentUserEolTodayEntryCount(eolDataCache));
+  }
+}
+
+// Ensure End-Line QC input always reflects the logged-in User's name
+function applyLoggedInUserToEolQcName() {
+  const eolQcEl = document.getElementById('eol_qcname');
+  if (!eolQcEl) return;
+  const username = (localStorage.getItem('nimbus_username') || '').trim();
+  if (username && username.toLowerCase() !== 'inspector') {
+    eolQcEl.value = username;
   }
 }
 
@@ -187,6 +200,7 @@ const navCenterAiBtn = document.getElementById('navCenterAiBtn');
 const navCenterAuditBtn = document.getElementById('navCenterAuditBtn');
 
 function openEolSheet() {
+  applyLoggedInUserToEolQcName();
   if (eolSheet && eolOverlay && !eolSheet.classList.contains('eol-standalone-sheet')) {
     eolSheet.classList.add('open');
     eolOverlay.classList.add('open');
@@ -853,6 +867,7 @@ function selectBatch(batchId) {
     setBatchCompleteWarning(false);
     updateStepperDisplays();
     validateQuantities();
+    applyLoggedInUserToEolQcName();
     return;
   }
 
@@ -886,7 +901,10 @@ function selectBatch(batchId) {
     syncDateDisplay(eolEtd, eolEtdDisplay);
 
     if (eolQcName) {
-      if (batchData.qcName && batchData.qcName.toLowerCase() !== 'unassigned') {
+      const loggedInUser = (localStorage.getItem('nimbus_username') || '').trim();
+      if (loggedInUser && loggedInUser.toLowerCase() !== 'inspector') {
+        eolQcName.value = loggedInUser;
+      } else if (batchData.qcName && batchData.qcName.toLowerCase() !== 'unassigned') {
         eolQcName.value = batchData.qcName;
       } else if (batchData.unit && eolDataCache.qcMapping) {
         eolQcName.value = eolDataCache.qcMapping[batchData.unit] || '';
@@ -1124,6 +1142,7 @@ if (eolResetBtn) {
       setBatchCompleteWarning(false);
       if (batchSearch) batchSearch.value = '';
       filterBatchDropdownList();
+      applyLoggedInUserToEolQcName();
     }, 50);
   });
 }
@@ -1237,6 +1256,7 @@ if (eolForm) {
       showToast('QC Verification recorded & synced to Google Sheets!');
       closeEolSheet();
       eolForm.reset();
+      applyLoggedInUserToEolQcName();
       clearRepairCategorySelection();
       if (repairCategoryReq) repairCategoryReq.style.display = 'none';
       if (eolChecked) eolChecked.value = '0';
