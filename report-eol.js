@@ -845,9 +845,52 @@ async function silentlyRefreshEndLineReport(force = false) {
   }
 }
 
-async function syncTrendSectionFromGoogleSheet() {
-  const btn = document.getElementById('trendSyncBtn');
-  if (btn) btn.classList.add('syncing');
+function getEolDatasetMinMaxDates() {
+  if (!Array.isArray(eolQcCache) || eolQcCache.length === 0) {
+    return { minDate: '2026-08-09', maxDate: '2026-11-03' };
+  }
+  const dates = eolQcCache
+    .map(r => parseGvizDate(r.checkDate))
+    .filter(d => d && /^\d{4}-\d{2}-\d{2}$/.test(d))
+    .sort();
+  if (dates.length === 0) {
+    return { minDate: '2026-08-09', maxDate: '2026-11-03' };
+  }
+  return { minDate: dates[0], maxDate: dates[dates.length - 1] };
+}
+
+function updateAllDatePresetsToDatasetSpan() {
+  const { minDate, maxDate } = getEolDatasetMinMaxDates();
+
+  if (typeof ucSelectedPreset !== 'undefined' && ucSelectedPreset === 'ALL') {
+    ucDateFrom = minDate;
+    ucDateTo = maxDate;
+    const inputFrom = document.getElementById('ucDateFrom');
+    const inputTo = document.getElementById('ucDateTo');
+    if (inputFrom) inputFrom.value = ucDateFrom;
+    if (inputTo) inputTo.value = ucDateTo;
+  }
+
+  if (typeof selectedBrandDatePreset !== 'undefined' && selectedBrandDatePreset === 'ALL') {
+    selectedBrandDateFrom = minDate;
+    selectedBrandDateTo = maxDate;
+    const bInputFrom = document.getElementById('brandDateFrom');
+    const bInputTo = document.getElementById('brandDateTo');
+    if (bInputFrom) bInputFrom.value = selectedBrandDateFrom;
+    if (bInputTo) bInputTo.value = selectedBrandDateTo;
+  }
+}
+
+async function syncReportSectionFromGoogleSheet(triggerBtn, sectionLabel) {
+  const syncButtons = [
+    document.getElementById('trendSyncBtn'),
+    document.getElementById('ucSyncBtn'),
+    document.getElementById('brandSyncBtn'),
+    document.getElementById('inspectorSyncBtn')
+  ].filter(Boolean);
+
+  if (triggerBtn) triggerBtn.classList.add('syncing');
+  syncButtons.forEach(b => b.classList.add('syncing'));
 
   try {
     // 1. Directly fetch 100% fresh live data from Google Sheets with cache-busting
@@ -863,29 +906,38 @@ async function syncTrendSectionFromGoogleSheet() {
       lastEolDataSignature = computeEolDataSignature(merged);
       eolQcCache = merged;
 
-      // 3. Persist to IndexedDB
+      // 4. Update date filter presets to encompass full dataset span if 'ALL' preset is active
+      updateAllDatePresetsToDatasetSpan();
+
+      // 5. Persist to IndexedDB
       if (typeof FMS_DB !== 'undefined') {
         await FMS_DB.saveEndLineQc(merged);
       }
 
-      // 4. Fully refresh all charts, month-wise trends, and KPI metrics
+      // 6. Fully refresh all charts, month-wise trends, and KPI metrics
       await renderReportsView();
-      showToast('Live Google Sheet data & charts updated!');
+      showToast(sectionLabel ? `${sectionLabel} updated from Google Sheets!` : 'Live Google Sheet data & charts updated!');
     } else {
       await loadQcDataFromIndexedDB(true);
+      updateAllDatePresetsToDatasetSpan();
       await renderReportsView();
       showToast('Synchronized with Database');
     }
   } catch (err) {
-    console.warn('Sync trend error:', err);
+    console.warn('Sync section error:', err);
     await loadQcDataFromIndexedDB(true);
     await renderReportsView();
     showToast('Refreshed from Database');
   } finally {
-    if (btn) {
-      setTimeout(() => btn.classList.remove('syncing'), 450);
-    }
+    setTimeout(() => {
+      if (triggerBtn) triggerBtn.classList.remove('syncing');
+      syncButtons.forEach(b => b.classList.remove('syncing'));
+    }, 450);
   }
+}
+
+async function syncTrendSectionFromGoogleSheet() {
+  return syncReportSectionFromGoogleSheet(document.getElementById('trendSyncBtn'), 'Month-wise Trends');
 }
 
 function startEolReportAutoRefresh() {
@@ -2033,8 +2085,9 @@ function setupUnitCategoryControls() {
 
   if (resetBtn) {
     resetBtn.addEventListener('click', () => {
-      ucDateFrom = '2026-08-09';
-      ucDateTo = '2026-11-03';
+      const { minDate, maxDate } = getEolDatasetMinMaxDates();
+      ucDateFrom = minDate;
+      ucDateTo = maxDate;
       ucSelectedPreset = 'ALL';
       ucSelectedUnit = 'ALL';
       ucSelectedCategory = 'ALL';
@@ -2054,8 +2107,9 @@ function setupUnitCategoryControls() {
       ucSelectedPreset = preset;
 
       if (preset === 'ALL') {
-        ucDateFrom = '2026-08-09';
-        ucDateTo = '2026-11-03';
+        const { minDate, maxDate } = getEolDatasetMinMaxDates();
+        ucDateFrom = minDate;
+        ucDateTo = maxDate;
       } else if (preset === 'NOV') {
         ucDateFrom = '2026-11-01';
         ucDateTo = '2026-11-03';
@@ -2938,8 +2992,9 @@ function setupBrandControls() {
 
   if (resetBtn) {
     resetBtn.addEventListener('click', () => {
-      selectedBrandDateFrom = '2026-08-09';
-      selectedBrandDateTo = '2026-11-03';
+      const { minDate, maxDate } = getEolDatasetMinMaxDates();
+      selectedBrandDateFrom = minDate;
+      selectedBrandDateTo = maxDate;
       selectedBrandDatePreset = 'ALL';
       currentBrandFilter = 'ALL';
       currentBrandCategoryFilter = 'ALL';
@@ -2960,8 +3015,9 @@ function setupBrandControls() {
       selectedBrandDatePreset = preset;
 
       if (preset === 'ALL') {
-        selectedBrandDateFrom = '2026-08-09';
-        selectedBrandDateTo = '2026-11-03';
+        const { minDate, maxDate } = getEolDatasetMinMaxDates();
+        selectedBrandDateFrom = minDate;
+        selectedBrandDateTo = maxDate;
       } else if (preset === 'NOV') {
         selectedBrandDateFrom = '2026-11-01';
         selectedBrandDateTo = '2026-11-03';
@@ -4179,10 +4235,30 @@ function setupFilterEvents() {
     });
   }
 
-  // 4b. Monthly Trends Section Direct Sync Button
+  // 4b. Section Direct Sync Buttons (Google Sheets Live Refresh)
   const trendSyncBtn = document.getElementById('trendSyncBtn');
   if (trendSyncBtn) {
-    trendSyncBtn.addEventListener('click', syncTrendSectionFromGoogleSheet);
+    trendSyncBtn.addEventListener('click', () => syncReportSectionFromGoogleSheet(trendSyncBtn, 'Month-wise Trends'));
+  }
+
+  const ucSyncBtn = document.getElementById('ucSyncBtn');
+  if (ucSyncBtn) {
+    ucSyncBtn.addEventListener('click', () => syncReportSectionFromGoogleSheet(ucSyncBtn, 'Unit-wise Defect Analysis'));
+  }
+
+  const brandSyncBtn = document.getElementById('brandSyncBtn');
+  if (brandSyncBtn) {
+    brandSyncBtn.addEventListener('click', () => syncReportSectionFromGoogleSheet(brandSyncBtn, 'Brand Wise Repair Analysis'));
+  }
+
+  const inspectorSyncBtn = document.getElementById('inspectorSyncBtn');
+  if (inspectorSyncBtn) {
+    inspectorSyncBtn.addEventListener('click', () => syncReportSectionFromGoogleSheet(inspectorSyncBtn, 'QC Inspector Performance'));
+  }
+
+  const profileSyncBtn = document.getElementById('profileSyncBtn');
+  if (profileSyncBtn) {
+    profileSyncBtn.addEventListener('click', () => syncReportSectionFromGoogleSheet(profileSyncBtn, 'QC Dashboard'));
   }
 
   // 5. Excel & PDF Export Buttons
