@@ -3196,7 +3196,6 @@ function updateBrandFilterPillsUI() {
 
 function renderBrandRepairChart() {
   const chartWrap = document.getElementById('brandChartWrap');
-  const badgeEl = document.getElementById('brandHeaderBadge');
   const spanTextEl = document.getElementById('brandSpanRangeText');
   const spanBatchesEl = document.getElementById('brandSpanBatches');
   const spanCheckedEl = document.getElementById('brandSpanChecked');
@@ -3327,8 +3326,6 @@ function renderBrandRepairChart() {
 
   // Update Category Selector Pills UI
   updateBrandCategoryPillsUI();
-
-  if (badgeEl) badgeEl.textContent = `${targetBrands.length} Active Brands`;
 
   if (targetBrands.length === 0) {
     chartWrap.innerHTML = '<div class="empty-state">No brand audit records available for selected date range</div>';
