@@ -12,7 +12,7 @@
   <title>End of Line — QC Reports</title>
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="style.css?v=1.2.0">
-  <link rel="stylesheet" href="report.css?v=2.9.5">
+  <link rel="stylesheet" href="report.css?v=2.9.6">
   <script>
     // Auth guard: bounce to login if not signed in
     if (!localStorage.getItem('nimbus_logged_in')) {
@@ -1189,6 +1189,39 @@
           </div>
         </div>
 
+        <div class="chart-fs-filters-bar" id="chartFsFiltersBar">
+          <!-- Row 1: Category Filter Pills -->
+          <div class="cfs-filter-row" id="cfsCategoryRow">
+            <span class="cfs-filter-label">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+              </svg>
+              <span>Category:</span>
+            </span>
+            <div class="cfs-pills-scroll" id="cfsCategoryPills">
+              <!-- Dynamically populated Category Pills -->
+            </div>
+            <button type="button" class="cfs-reset-btn" id="cfsResetBtn" style="display: none;" title="Reset all filters to All">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              <span>Reset</span>
+            </button>
+          </div>
+
+          <!-- Row 2: Secondary Contextual Filter Pills (Unit, Brand, Range, Inspector) -->
+          <div class="cfs-filter-row" id="cfsSecondaryRow">
+            <span class="cfs-filter-label" id="cfsSecondaryLabel">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+              </svg>
+              <span id="cfsSecondaryLabelText">Filter:</span>
+            </span>
+            <div class="cfs-pills-scroll" id="cfsSecondaryPills">
+              <!-- Dynamically populated contextual pills -->
+            </div>
+          </div>
+        </div>
+
         <div class="chart-fs-legend-bar" id="chartFsLegendBar" style="display: none;"></div>
 
         <div class="chart-fs-body" id="chartFsBody"></div>
@@ -1199,9 +1232,9 @@
               <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
               <line x1="12" y1="18" x2="12" y2="18.01"></line>
             </svg>
-            Rotate your phone sideways for widescreen inspection
+            Rotate phone sideways for widescreen &bull; Tap filters to change chart
           </span>
-          <span>Tap Rotate to flip &bull; Tap &times; to exit</span>
+          <span class="cfs-active-filter-indicator" id="cfsActiveFilterIndicator">Filter: All Categories</span>
         </div>
       </div>
     </div>
@@ -1212,8 +1245,8 @@
   <script src="jspdf.umd.min.js?v=1.0.5"></script>
   <script src="jspdf.plugin.autotable.min.js?v=1.0.5"></script>
   <script src="endline_qc_data.js?v=2.6.0"></script>
-  <script src="db.js?v=2.9.0"></script>
-  <script src="report-eol.js?v=2.9.8"></script>
+  <script src="db.js?v=2.9.2"></script>
+  <script src="report-eol.js?v=2.9.11"></script>
 </body>
 
 </html>
