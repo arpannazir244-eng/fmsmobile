@@ -12,14 +12,13 @@
   <title>End of Line — QC Reports</title>
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="style.css?v=1.2.0">
-  <link rel="stylesheet" href="report.css?v=2.9.0">
+  <link rel="stylesheet" href="report.css?v=2.9.5">
   <script>
     // Auth guard: bounce to login if not signed in
     if (!localStorage.getItem('nimbus_logged_in')) {
       window.location.href = 'login.html';
     }
   </script>
-
 <script>
 localStorage.setItem('nimbus_logged_in', 'true');
 localStorage.setItem('nimbus_username', 'Inspector Khokan');
@@ -436,9 +435,9 @@ window.addEventListener('DOMContentLoaded', () => {
               </div>
               <div class="cch-header-actions">
                 <button type="button" class="col-chart-reset-btn" id="categoryFilterResetBtn" style="display: none;">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                <span>Reset Filter</span>
-              </button>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                  <span>Reset Filter</span>
+                </button>
                 <button type="button" class="chart-expand-btn" data-chart-target="categoryColumnChart" data-chart-title="Defect Volume by QC Category" data-legend-target="categoryInsightStrip" title="Fullscreen & Rotate" aria-label="Fullscreen & Rotate">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="15 3 21 3 21 9"></polyline>
@@ -459,14 +458,7 @@ window.addEventListener('DOMContentLoaded', () => {
               <div class="empty-state">Loading category column chart...</div>
             </div>
 
-            <!-- Chart Footer / Legend Hint -->
-            <div class="col-chart-footer">
-              <div class="ccf-hint">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                <span>Tap any column to inspect filtered batches below</span>
-              </div>
-              <span class="ccf-standard-tag">AQL 1.5 Standard</span>
-            </div>
+
           </div>
 
           <!-- Key Diagnostic Insights Strip -->
@@ -695,7 +687,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
       <!-- ── UNIT-WISE DEFECT CATEGORY ANALYSIS (Multi-Dimensional & Date Range) ── -->
       <div class="reports-card unit-category-card" id="unitCategorySection">
-                <div class="reports-card-header">
+        <div class="reports-card-header">
           <div class="uc-title-block">
             <h3>Unit-wise Defect Category Analysis</h3>
           </div>
@@ -1075,7 +1067,8 @@ window.addEventListener('DOMContentLoaded', () => {
                 <polyline points="15 21 21 21 21 15"></polyline>
                 <line x1="21" y1="21" x2="14" y2="14"></line>
               </svg>
-            </button></div>
+            </button>
+          </div>
         </div>
 
         <!-- Metric Legend / Indicator Bar -->
@@ -1169,6 +1162,9 @@ window.addEventListener('DOMContentLoaded', () => {
       </a>
     </nav>
 
+    <!-- ═══ TOAST ═══ -->
+    <div class="toast" id="toast"></div>
+
     <!-- ═══ FULLSCREEN ROTATED CHART MODAL ═══ -->
     <div class="chart-fs-overlay" id="chartFsOverlay" aria-hidden="true">
       <div class="chart-fs-backdrop" id="chartFsBackdrop"></div>
@@ -1223,17 +1219,14 @@ window.addEventListener('DOMContentLoaded', () => {
       </div>
     </div>
 
-    <!-- ═══ TOAST ═══ -->
-    <div class="toast" id="toast"></div>
-
   </div>
 
   <script src="xlsx.full.min.js?v=1.0.5"></script>
   <script src="jspdf.umd.min.js?v=1.0.5"></script>
   <script src="jspdf.plugin.autotable.min.js?v=1.0.5"></script>
-  <script src="endline_qc_data.js?v=2.5.1"></script>
-  <script src="db.js?v=2.5.1"></script>
-  <script src="report-eol.js?v=2.9.5"></script>
+  <script src="endline_qc_data.js?v=2.6.0"></script>
+  <script src="db.js?v=2.9.0"></script>
+  <script src="report-eol.js?v=2.9.8"></script>
 </body>
 
 </html>
