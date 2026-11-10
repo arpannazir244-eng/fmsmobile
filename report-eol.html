@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#fbf6eb">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="EOL Report">
+  <link rel="apple-touch-icon" href="https://res.cloudinary.com/dnrgcigsj/image/upload/v1789365942/trio-dark-logo_ayyhkh.svg">
+  <title>End of Line — QC Reports</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css?v=1.2.0">
+  <link rel="stylesheet" href="report.css?v=2.9.5">
+  <script>
+    // Auth guard: bounce to login if not signed in
+    if (!localStorage.getItem('nimbus_logged_in')) {
+      window.location.href = 'login.html';
+    }
+  </script>
+</head>
+
+<body>
+  <div class="app" style="padding-top: calc(62px + env(safe-area-inset-top));">
+
+    <!-- ═══ NOTIFICATION SHEET ═══ -->
+    <div class="notif-overlay" id="notifOverlay"></div>
+    <div class="notif-sheet" id="notifSheet">
+      <div class="notif-sheet-header">
+        <div class="notif-header-title">
+          <span>Notifications</span>
+        </div>
+        <button class="notif-close-btn" id="notifCloseBtn" aria-label="Close">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="notif-list">
+        <div class="notif-item">
+          <div class="notif-item-icon">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <div class="notif-item-body">
+            <strong>Google Sheets Synced</strong>
+            <p>Production batch inventory and user permissions are live.</p>
+            <small>Active</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ USER PROFILE CARD / SHEET ═══ -->
+    <div class="profile-overlay" id="profileOverlay"></div>
+    <div class="profile-sheet" id="profileSheet">
+      <div class="profile-sheet-header">
+        <span class="ps-header-title">My Profile</span>
+        <button class="profile-close-btn" id="profileCloseBtn" aria-label="Close profile">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="ps-user-card">
+        <div class="ps-avatar" id="profileAvatarText">QC</div>
+        <div class="ps-user-details">
+          <h3 class="ps-user-name" id="profileUserName">Inspector</h3>
+          <span class="ps-company-tag">Trio Trend Exports Pvt. Ltd.</span>
+        </div>
+      </div>
+
+      <div class="ps-info-grid">
+        <div class="ps-info-item">
+          <span class="ps-info-label">Active Units</span>
+          <span class="ps-info-val">P-32, S-18, S-37+</span>
+        </div>
+        <div class="ps-info-item">
+          <span class="ps-info-label">System Status</span>
+          <span class="ps-info-val ps-status-online">
+            <span class="ps-status-dot"></span> Online
+          </span>
+        </div>
+        <div class="ps-info-item">
+          <span class="ps-info-label">Current App</span>
+          <span class="ps-info-val" id="profileAppVer">v1.0.7</span>
+        </div>
+        <div class="ps-info-item">
+          <span class="ps-info-label">Access Level</span>
+          <span class="ps-info-val">Full QC Line Entry</span>
+        </div>
+      </div>
+
+      <div class="ps-actions">
+        <button type="button" class="ps-action-btn" id="profileSyncBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-1.19" />
+          </svg>
+          <span>Sync Sheets Data</span>
+        </button>
+
+        <button type="button" class="ps-logout-btn" id="profileLogoutBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          <span>Sign Out</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ═══ TOPBAR / HEADER ═══ -->
+    <header class="topbar" style="position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 420px; z-index: 85; box-sizing: border-box; background-color: #fbf6eb;">
+      <a href="report.html" class="icon-btn" id="backToReportsBtn" title="Back to Reports" aria-label="Back to Reports">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+      </a>
+
+      <div class="brand-center">
+        <img src="https://res.cloudinary.com/dnrgcigsj/image/upload/v1789365942/trio-dark-logo_ayyhkh.svg"
+          alt="Trio Trend Exports" class="topbar-brand-logo">
+        <span class="topbar-brand-divider"></span>
+        <div class="topbar-brand-text">
+          <span class="brand-title">End of Line</span>
+          <span class="brand-sub">QC Inspection Report</span>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <button class="icon-btn notif-btn" id="bellBtn" title="Notifications" aria-label="Notifications">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </svg>
+          <span class="notif-dot"></span>
+        </button>
+
+        <button class="avatar-badge" id="avatarBtn" title="Profile" aria-label="User Profile">
+          <span id="userAvatarText">QC</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ═══ MAIN CONTENT AREA ═══ -->
+    <main class="content" style="padding-top: 14px;">
+
+      <!-- Section Header -->
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <h2 class="section-label">End-Line QC Analytics</h2>
+        </div>
+        <button class="refresh-pill-btn" id="repSyncBtn" title="Sync & Reload Database Data">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-1.19" />
+          </svg>
+          <span>Sync</span>
+        </button>
+      </div>
+
+      <!-- ── EXPORT ACTION BAR (Excel & PDF) ── -->
+      <div class="export-actions-card">
+        <div class="export-header-row">
+          <div class="export-title-block">
+            <span class="export-label">Download Quality Reports</span>
+            <span class="export-sub">Export deep QC analysis, Pareto defects & records</span>
+          </div>
+          <span class="export-badge">Official</span>
+        </div>
+
+        <div class="export-btn-group">
+          <button type="button" class="export-btn export-excel-btn" id="btnExportExcel">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="8" y1="13" x2="16" y2="13"></line>
+              <line x1="8" y1="17" x2="16" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            <span>Download Excel</span>
+          </button>
+
+          <button type="button" class="export-btn export-pdf-btn" id="btnExportPdf">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="12" y1="18" x2="12" y2="12"></line>
+              <line x1="9" y1="15" x2="15" y2="15"></line>
+            </svg>
+            <span>Download PDF</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ── ANALYSIS FILTER CHIPS (Month & Unit) ── -->
+      <div class="analysis-filter-bar">
+        <!-- 1. Month Filter (Google Sheet Column AE: CHECK DATE) -->
+        <div class="filter-group">
+          <div class="filter-group-header">
+            <span class="filter-group-title">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              <span>Month (Check Date)</span>
+            </span>
+          </div>
+          <div class="filter-scroll-pills" id="repMonthFilterPills">
+            <button type="button" class="rep-filter-pill active" data-month="ALL">All Months</button>
+            <button type="button" class="rep-filter-pill" data-month="2026-11">Nov 2026</button>
+            <button type="button" class="rep-filter-pill" data-month="2026-10">Oct 2026</button>
+            <button type="button" class="rep-filter-pill" data-month="2026-09">Sep 2026</button>
+            <button type="button" class="rep-filter-pill" data-month="2026-08">Aug 2026</button>
+          </div>
+        </div>
+
+        <!-- 2. Unit Filter -->
+        <div class="filter-group">
+          <div class="filter-group-header">
+            <span class="filter-group-title">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+              </svg>
+              <span>Production Unit</span>
+            </span>
+          </div>
+          <div class="filter-scroll-pills" id="repUnitFilterPills">
+            <button type="button" class="rep-filter-pill active" data-unit="ALL">All Units</button>
+            <button type="button" class="rep-filter-pill" data-unit="P-32">Unit P-32</button>
+            <button type="button" class="rep-filter-pill" data-unit="S-18">Unit S-18</button>
+            <button type="button" class="rep-filter-pill" data-unit="S-37">Unit S-37</button>
+            <button type="button" class="rep-filter-pill" data-unit="S-29">Unit S-29</button>
+            <button type="button" class="rep-filter-pill" data-unit="14-B">Unit 14-B</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── QC EXECUTIVE HERO CARD (Pass Rate Gauge & Quality Health) ── -->
+      <div class="qc-executive-hero">
+        <div class="qeh-top">
+          <div class="qeh-brand-wrap">
+            <span class="qeh-title">End-Line Quality Health</span>
+            <span class="qeh-subtitle" id="qehSubtitle">Database Live Inspection Analytics</span>
+          </div>
+          <span class="card-badge" id="qehBatchBadge">219 Batch Checks</span>
+        </div>
+
+        <div class="qeh-gauge-row">
+          <div class="qeh-gauge-wrap">
+            <svg class="qeh-svg-circle" viewBox="0 0 76 76">
+              <circle class="qeh-svg-bg" cx="38" cy="38" r="32"></circle>
+              <circle class="qeh-svg-progress" id="qehGaugeProgress" cx="38" cy="38" r="32" stroke-dasharray="201.06" stroke-dashoffset="5.5"></circle>
+            </svg>
+            <div class="qeh-gauge-center">
+              <span class="qeh-gauge-pct" id="analysisPassRate">84.5%</span>
+              <span class="qeh-gauge-lbl">Pass Rate</span>
+            </div>
+          </div>
+
+          <div class="qeh-gauge-info">
+            <span class="qeh-grade-badge" id="qehGradeBadge">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>AQL 1.5 Export Standard</span>
+            </span>
+            <div class="qeh-headline" id="qehHeadline">84.5% Approved for Store</div>
+            <div class="qeh-desc" id="qehDesc">15,799 pieces passed of 18,705 total inspected across 219 batches.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── 4-CARD QC INSPECTION KPI GRID ── -->
+      <div class="qc-kpi-4grid">
+        <!-- 1. Total Checked -->
+        <div class="qc-kpi-box checked">
+          <div class="qkb-top">
+            <span class="qkb-label">Checked Qty</span>
+            <span class="qkb-icon">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="9" y1="12" x2="15" y2="12"></line><line x1="12" y1="9" x2="12" y2="15"></line></svg>
+            </span>
+          </div>
+          <div class="qkb-val" id="analysisTotalChecked">18,705</div>
+          <span class="qkb-sub" id="analysisCheckedBatches">219 checked batches</span>
+        </div>
+
+        <!-- 2. Passed & Sent to WH -->
+        <div class="qc-kpi-box passed">
+          <div class="qkb-top">
+            <span class="qkb-label">Sent to WH</span>
+            <span class="qkb-icon">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </span>
+          </div>
+          <div class="qkb-val" id="analysisTotalWh">15,799</div>
+          <span class="qkb-sub" id="analysisWhPct">84.5% approved for store</span>
+        </div>
+
+        <!-- 3. Total Repair -->
+        <div class="qc-kpi-box repair">
+          <div class="qkb-top">
+            <span class="qkb-label">Repair Qty</span>
+            <span class="qkb-icon">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            </span>
+          </div>
+          <div class="qkb-val" id="analysisTotalRepair">2,906</div>
+          <span class="qkb-sub" id="analysisRepairPieces">2,906 pieces rectified</span>
+        </div>
+
+        <!-- 4. Defect Rate -->
+        <div class="qc-kpi-box defect-rate">
+          <div class="qkb-top">
+            <span class="qkb-label">Defect Rate</span>
+            <span class="qkb-icon">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            </span>
+          </div>
+          <div class="qkb-val" id="analysisDefectRate">15.5%</div>
+          <span class="qkb-sub" id="analysisDefectRatio">Repair vs Checked</span>
+        </div>
+      </div>
+
+      <!-- ── DEEP REPAIRING REASONS & DEFECT ANALYSIS CARD ── -->
+      <div class="pareto-card" id="paretoCard">
+        <div class="pareto-head-row">
+          <div class="pareto-title-block">
+            <h3 id="paretoCardTitle">Repairing Reasons-Analysis</h3>
+          </div>
+        </div>
+
+        <!-- Dropdown Selector: Standard Report vs Details Report -->
+        <div class="report-view-selector-bar">
+          <div class="rvs-label">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+            </svg>
+            <span>Report View:</span>
+          </div>
+          <div class="custom-report-dropdown" id="reportModeDropdown">
+            <button type="button" class="crd-trigger" id="reportModeTrigger" aria-haspopup="listbox" aria-expanded="false" title="Switch Report View Mode">
+              <div class="crd-trigger-left">
+                <span class="crd-trigger-icon" id="crdTriggerIcon">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                  </svg>
+                </span>
+                <span class="crd-trigger-text" id="reportModeSelectedText">Standard Report</span>
+              </div>
+              <span class="crd-arrow">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </span>
+            </button>
+
+            <!-- Custom Menu Options -->
+            <div class="crd-menu" id="reportModeMenu" role="listbox">
+              <div class="crd-option active" data-value="standard" role="option" aria-selected="true">
+                <div class="crd-opt-icon standard">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                  </svg>
+                </div>
+                <div class="crd-opt-info">
+                  <span class="crd-opt-title">Standard Report</span>
+                  <span class="crd-opt-desc">7-Category Column Chart & Summary</span>
+                </div>
+                <span class="crd-opt-check">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </span>
+              </div>
+
+              <div class="crd-option" data-value="details" role="option" aria-selected="false">
+                <div class="crd-opt-icon details">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                </div>
+                <div class="crd-opt-info">
+                  <span class="crd-opt-title">Details Report</span>
+                  <span class="crd-opt-desc">Deep Pareto Defect Reasons Breakdown</span>
+                </div>
+                <span class="crd-opt-check">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </span>
+              </div>
+            </div>
+
+            <!-- Programmatic Hidden Select for complete backwards compatibility -->
+            <select id="reportViewModeSelect" style="display:none;" aria-hidden="true">
+              <option value="standard" selected>Standard Report</option>
+              <option value="details">Details Report</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ═══ 1. STANDARD REPORT VIEW (Category Wise Column Chart & Matrix) ═══ -->
+        <div class="report-view-container standard-view active" id="standardReportView">
+          <!-- Column Chart Container -->
+          <div class="col-chart-card">
+            <div class="col-chart-header">
+              <div class="cch-title-wrap">
+                <span class="cch-title">Defect Volume by QC Category</span>
+                <span class="cch-sub">Vertical column distribution across 7 standard categories</span>
+              </div>
+              <div class="cch-header-actions">
+                <button type="button" class="col-chart-reset-btn" id="categoryFilterResetBtn" style="display: none;">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                  <span>Reset Filter</span>
+                </button>
+                <button type="button" class="chart-expand-btn" data-chart-target="categoryColumnChart" data-chart-title="Defect Volume by QC Category" data-legend-target="categoryInsightStrip" title="Fullscreen & Rotate" aria-label="Fullscreen & Rotate">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 3 21 3 21 9"></polyline>
+                    <line x1="21" y1="3" x2="14" y2="10"></line>
+                    <polyline points="9 3 3 3 3 9"></polyline>
+                    <line x1="3" y1="3" x2="10" y2="10"></line>
+                    <polyline points="9 21 3 21 3 15"></polyline>
+                    <line x1="3" y1="21" x2="10" y2="14"></line>
+                    <polyline points="15 21 21 21 21 15"></polyline>
+                    <line x1="21" y1="21" x2="14" y2="14"></line>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- The Interactive 7-Category Column Chart -->
+            <div class="category-column-chart" id="categoryColumnChart">
+              <div class="empty-state">Loading category column chart...</div>
+            </div>
+
+
+          </div>
+
+          <!-- Key Diagnostic Insights Strip -->
+          <div class="category-insight-strip" id="categoryInsightStrip">
+            <div class="cis-item cis-dominant">
+              <span class="cis-label">Primary Driver</span>
+              <strong class="cis-val" id="cisDominantVal">Stitching (63%)</strong>
+            </div>
+            <div class="cis-item cis-secondary">
+              <span class="cis-label">Secondary Driver</span>
+              <strong class="cis-val" id="cisSecondaryVal">Workmanship (21%)</strong>
+            </div>
+            <div class="cis-item cis-clean">
+              <span class="cis-label">Controlled</span>
+              <strong class="cis-val" id="cisCleanVal">Material (0.7%)</strong>
+            </div>
+          </div>
+
+          <!-- 7-Category Detailed Breakdown Cards -->
+          <div class="standard-category-list" id="standardCategoryList">
+            <div class="empty-state">Loading standard category breakdown...</div>
+          </div>
+        </div>
+
+        <!-- ═══ 2. DETAILS REPORT VIEW (Granular Defect Reasons Pareto) ═══ -->
+        <div class="report-view-container details-view" id="detailsReportView" style="display: none;">
+          <!-- Quick 1-Click Defect Filter Chips -->
+          <div class="defect-chip-bar" id="defectChipBar">
+            <button type="button" class="defect-chip active" data-reason="ALL">
+              <span>All Reasons</span>
+              <span class="defect-chip-count" id="chipCountAll">0</span>
+            </button>
+          </div>
+
+          <!-- Pareto Bar List -->
+          <div class="pareto-bar-list" id="paretoBarList">
+            <div class="empty-state">Loading repair reasons analysis from Database...</div>
+          </div>
+
+          <!-- Root Cause Diagnostic Box -->
+          <div class="root-cause-box" id="rootCauseBox">
+            <span class="rc-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z"/>
+              </svg>
+            </span>
+            <div class="rc-text" id="rootCauseText">
+              <strong>Key Quality Insight:</strong> Analyzing root causes from Database...
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── MONTH-WISE REPAIRING PERCENTAGE & TRENDS (Smart Column Chart + Graph Line) ── -->
+      <div class="reports-card month-trend-card" id="monthTrendSection">
+        <div class="reports-card-header">
+          <div class="mtc-title-block">
+            <h3>Month Wise Repairing Analysis</h3>
+          </div>
+          <div class="mtc-header-actions">
+            <button type="button" class="mtc-sync-btn" id="trendSyncBtn" title="Sync live data directly from Google Sheets">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-1.19" />
+              </svg>
+              <span>Sync</span>
+            </button>
+            <span class="card-badge" id="mtcTrendBadge">4 Months</span>
+            <button type="button" class="chart-expand-btn" data-chart-target="smartTrendChartWrap" data-chart-title="Month Wise Repairing Analysis" data-legend-target="trendChartLegend" title="Fullscreen & Rotate" aria-label="Fullscreen & Rotate">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="21" y1="3" x2="14" y2="10"></line>
+                <polyline points="9 3 3 3 3 9"></polyline>
+                <line x1="3" y1="3" x2="10" y2="10"></line>
+                <polyline points="9 21 3 21 3 15"></polyline>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+                <polyline points="15 21 21 21 21 15"></polyline>
+                <line x1="21" y1="21" x2="14" y2="14"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+<!-- Month Range & Selection Filter Controls -->
+        <div class="trend-month-range-bar">
+          <div class="tmr-head-row">
+            <span class="tmr-title">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              <span>Select Months / Range:</span>
+            </span>
+            <span class="tmr-count-pill" id="tmrSelectedCountPill">4 Months</span>
+          </div>
+
+          <!-- Dropdown Range Selector (From - To) -->
+          <div class="tmr-dropdown-group">
+            <div class="tmr-select-box">
+              <span class="tmr-box-lbl">From:</span>
+              <div class="tmr-select-wrapper">
+                <select id="trendFromMonthSelect" class="tmr-select" aria-label="From Month">
+                  <option value="ALL">First Month</option>
+                </select>
+                <span class="tmr-select-arrow" aria-hidden="true">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </span>
+              </div>
+            </div>
+
+            <div class="tmr-arrow-divider">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            </div>
+
+            <div class="tmr-select-box">
+              <span class="tmr-box-lbl">To:</span>
+              <div class="tmr-select-wrapper">
+                <select id="trendToMonthSelect" class="tmr-select" aria-label="To Month">
+                  <option value="ALL">Latest Month</option>
+                </select>
+                <span class="tmr-select-arrow" aria-hidden="true">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Presets Bar -->
+          <div class="tmr-presets-bar" id="trendPresetsBar">
+            <button type="button" class="tmr-preset-pill active" data-preset="ALL">All Months</button>
+            <button type="button" class="tmr-preset-pill" data-preset="L3M">Last 3 Mos</button>
+            <button type="button" class="tmr-preset-pill" data-preset="L2M">Last 2 Mos</button>
+            <button type="button" class="tmr-preset-pill" data-preset="LATEST">Latest Month</button>
+          </div>
+
+          <!-- Individual Month Multi-Select Toggle Pills -->
+          <div class="tmr-toggle-pills" id="trendMonthTogglePills"></div>
+        </div>
+
+        <!-- Category Selector Chips for Monthly Trends -->
+        <div class="trend-category-chips-bar">
+          <span class="tcc-label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+            </svg>
+            <span>Category:</span>
+          </span>
+          <div class="trend-category-chips" id="trendCategoryChips">
+            <button type="button" class="trend-cat-chip active" data-category="ALL">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+              <span>All Categories</span>
+            </button>
+            <button type="button" class="trend-cat-chip" data-category="Stitching">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 3v18M6 4h9l-2 3 2 3H6"/><circle cx="18" cy="18" r="3"/>
+              </svg>
+              <span>Stitching</span>
+            </button>
+            <button type="button" class="trend-cat-chip" data-category="Edge-Paint">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18.37 2.63 14 7l-1.59-1.59a2 2 0 0 0-2.82 0L8 7l9 9 1.59-1.59a2 2 0 0 0 0-2.82L17 10l4.37-4.37a2.12 2.12 0 1 0-3-3Z"/><path d="M9 8c-2 3-4 3.5-7 4l8 8c.5-3 1-5 4-7"/>
+              </svg>
+              <span>Edge-Paint</span>
+            </button>
+            <button type="button" class="trend-cat-chip" data-category="Workmanship">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"/><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+              <span>Workmanship</span>
+            </button>
+            <button type="button" class="trend-cat-chip" data-category="Finishing">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/>
+              </svg>
+              <span>Finishing</span>
+            </button>
+            <button type="button" class="trend-cat-chip" data-category="Hardware">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+              </svg>
+              <span>Hardware</span>
+            </button>
+            <button type="button" class="trend-cat-chip" data-category="Assembly">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+              </svg>
+              <span>Assembly</span>
+            </button>
+            <button type="button" class="trend-cat-chip" data-category="Material">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>
+              </svg>
+              <span>Material</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Chart Legend / Key Indicator -->
+        <div class="trend-chart-legend" id="trendChartLegend">
+          <div class="tcl-item">
+            <span class="tcl-color-box tcl-bar-box" id="tclBarBox"></span>
+            <span class="tcl-text">Column: <strong id="tclBarLabel">Repairing %</strong></span>
+          </div>
+          <div class="tcl-cat-legend-list" id="tclCatLegendList">
+            <span class="tcl-cat-badge" style="--c: #ef4444;"><span class="tcl-dot"></span>Stitching</span>
+            <span class="tcl-cat-badge" style="--c: #8b5cf6;"><span class="tcl-dot"></span>Workmanship</span>
+            <span class="tcl-cat-badge" style="--c: #3b82f6;"><span class="tcl-dot"></span>Hardware</span>
+            <span class="tcl-cat-badge" style="--c: #f97316;"><span class="tcl-dot"></span>Edge-Paint</span>
+            <span class="tcl-cat-badge" style="--c: #10b981;"><span class="tcl-dot"></span>Finishing</span>
+            <span class="tcl-cat-badge" style="--c: #f59e0b;"><span class="tcl-dot"></span>Assembly</span>
+            <span class="tcl-cat-badge" style="--c: #06b6d4;"><span class="tcl-dot"></span>Material</span>
+          </div>
+        </div>
+
+        <!-- Smart Column Chart + Graph Line SVG Container -->
+        <div class="smart-trend-chart-wrap" id="smartTrendChartWrap">
+          <div class="empty-state">Loading smart column & graph line chart...</div>
+        </div>
+
+
+      </div>
+
+      <!-- ── UNIT-WISE DEFECT CATEGORY ANALYSIS (Multi-Dimensional & Date Range) ── -->
+      <div class="reports-card unit-category-card" id="unitCategorySection">
+        <div class="reports-card-header">
+          <div class="uc-title-block">
+            <h3>Unit-wise Defect Category Analysis</h3>
+          </div>
+          <div class="uc-header-actions">
+            <button type="button" class="chart-expand-btn" data-chart-target="ucChartWrap" data-chart-title="Unit-wise Defect Category Analysis" data-legend-target="ucChartLegend" title="Fullscreen & Rotate" aria-label="Fullscreen & Rotate">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="21" y1="3" x2="14" y2="10"></line>
+                <polyline points="9 3 3 3 3 9"></polyline>
+                <line x1="3" y1="3" x2="10" y2="10"></line>
+                <polyline points="9 21 3 21 3 15"></polyline>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+                <polyline points="15 21 21 21 21 15"></polyline>
+                <line x1="21" y1="21" x2="14" y2="14"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- 1. Date Range Filter Controls (Inspection Date - Column AE: CHECK DATE) -->
+        <div class="uc-filter-box">
+          <div class="uc-filter-head">
+            <span class="uc-filter-label">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              <span>Date Range Filter (CHECK DATE):</span>
+            </span>
+            <button type="button" class="uc-reset-btn" id="ucDateResetBtn" title="Reset to all dates">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                <path d="M3 3v5h5"></path>
+              </svg>
+              <span>Reset</span>
+            </button>
+          </div>
+
+          <!-- Date Inputs (From - To) -->
+          <div class="uc-date-inputs-row">
+            <div class="uc-date-field">
+              <span class="uc-date-lbl">From:</span>
+              <input type="date" id="ucDateFrom" class="uc-date-input" aria-label="From Date">
+            </div>
+            <div class="uc-date-arrow" aria-hidden="true">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </div>
+            <div class="uc-date-field">
+              <span class="uc-date-lbl">To:</span>
+              <input type="date" id="ucDateTo" class="uc-date-input" aria-label="To Date">
+            </div>
+          </div>
+
+          <!-- Quick Date Range Presets -->
+          <div class="uc-presets-bar" id="ucDatePresetsBar">
+            <button type="button" class="uc-preset-chip active" data-preset="ALL">All Dates</button>
+            <button type="button" class="uc-preset-chip" data-preset="NOV">Nov '26</button>
+            <button type="button" class="uc-preset-chip" data-preset="OCT">Oct '26</button>
+            <button type="button" class="uc-preset-chip" data-preset="SEP">Sep '26</button>
+            <button type="button" class="uc-preset-chip" data-preset="AUG">Aug '26</button>
+            <button type="button" class="uc-preset-chip" data-preset="L30D">Last 30 Days</button>
+          </div>
+
+          <!-- Filtered Date Range Summary Metrics Bar -->
+          <div class="uc-span-summary" id="ucSpanSummary">
+            <div class="uc-span-item">
+              <span class="uc-span-label">Selected Span:</span>
+              <strong class="uc-span-val" id="ucSpanRangeText">09 Aug 2026 – 03 Nov 2026</strong>
+            </div>
+            <div class="uc-span-stats">
+              <span class="uc-span-stat">Audited: <strong id="ucSpanBatches">219 batches</strong></span>
+              <span class="uc-span-stat">Checked: <strong id="ucSpanChecked">18,705</strong></span>
+              <span class="uc-span-stat">Repair: <strong id="ucSpanRepair" class="danger">2,906 (15.5%)</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Multi-Dimension Controls & View Modes -->
+        <div class="uc-dimension-bar">
+          <div class="uc-view-mode-toggle">
+            <button type="button" class="uc-dim-toggle-btn active" data-view="stacked">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="12" width="5" height="9" rx="1"></rect>
+                <rect x="10" y="6" width="5" height="15" rx="1"></rect>
+                <rect x="17" y="2" width="5" height="19" rx="1"></rect>
+              </svg>
+              <span>Unit &amp; Category Combo</span>
+            </button>
+            <button type="button" class="uc-dim-toggle-btn" data-view="rate">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9" stroke-opacity="0.3"></circle>
+                <path d="M12 3a9 9 0 0 1 9 9"></path>
+                <circle cx="12" cy="12" r="5" stroke-opacity="0.3"></circle>
+                <path d="M12 7a5 5 0 0 1 5 5"></path>
+              </svg>
+              <span>Radial Bar (Rate %)</span>
+            </button>
+          </div>
+
+          <!-- Unit Selector Filter Chips -->
+          <div class="uc-dimension-filter-group">
+            <div class="uc-filter-sublabel">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+              </svg>
+              <span>Filter Unit:</span>
+            </div>
+            <div class="uc-filter-pills" id="ucUnitFilterPills">
+              <button type="button" class="uc-unit-pill active" data-unit="ALL">All Units</button>
+              <button type="button" class="uc-unit-pill" data-unit="P-32">Unit P-32</button>
+              <button type="button" class="uc-unit-pill" data-unit="S-37">Unit S-37</button>
+              <button type="button" class="uc-unit-pill" data-unit="S-18">Unit S-18</button>
+              <button type="button" class="uc-unit-pill" data-unit="S-29">Unit S-29</button>
+            </div>
+          </div>
+
+          <!-- Category Focus Selector Chips -->
+          <div class="uc-dimension-filter-group">
+            <div class="uc-filter-sublabel">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+              </svg>
+              <span>Filter Category:</span>
+            </div>
+            <div class="uc-filter-pills uc-cat-pills" id="ucCategoryFilterPills">
+              <button type="button" class="uc-cat-pill active" data-category="ALL">All Categories</button>
+              <button type="button" class="uc-cat-pill" data-category="Stitching">Stitching</button>
+              <button type="button" class="uc-cat-pill" data-category="Edge-Paint">Edge-Paint</button>
+              <button type="button" class="uc-cat-pill" data-category="Workmanship">Workmanship</button>
+              <button type="button" class="uc-cat-pill" data-category="Finishing">Finishing</button>
+              <button type="button" class="uc-cat-pill" data-category="Hardware">Hardware</button>
+              <button type="button" class="uc-cat-pill" data-category="Assembly">Assembly</button>
+              <button type="button" class="uc-cat-pill" data-category="Material">Material</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Dynamic Multi-Dimensional Chart Container -->
+        <div class="uc-chart-wrap" id="ucChartWrap">
+          <div class="empty-state">Loading unit defect category graph...</div>
+        </div>
+
+        <!-- Category Legend for Chart -->
+        <div class="uc-chart-legend" id="ucChartLegend">
+          <!-- Populated dynamically with category colors -->
+        </div>
+
+        <!-- 4. Multi-Dimensional Cross-Matrix Table -->
+        <div class="uc-matrix-section">
+          <div class="uc-matrix-header">
+            <h4>Unit &times; Defect Category Cross-Matrix</h4>
+            <span class="uc-matrix-hint">Scroll horizontally to view all 7 categories</span>
+          </div>
+          <div class="uc-table-scroll-wrapper" id="ucMatrixTableWrap">
+            <!-- Populated dynamically with high-contrast table -->
+          </div>
+        </div>
+
+        <!-- 5. Unit Defect Profile Insight Cards -->
+        <div class="uc-unit-cards-grid" id="ucUnitCardsGrid">
+          <!-- Populated dynamically with per-unit highlights -->
+        </div>
+      </div>
+
+      <!-- ── BRAND-WISE REPAIRING ANALYSIS (COLUMN CHART + DEFECT GRAPH LINES) ── -->
+      <div class="reports-card brand-trend-card" id="brandTrendSection">
+        <div class="reports-card-header">
+          <div class="btc-title-block">
+            <h3>Brand Wise Repair Analysis</h3>
+            <span class="card-subtitle">Brand-wise Repair % Column &amp; Defect Category Lines from END LINE QC-FMS</span>
+          </div>
+          <div class="btc-header-actions">
+            <span class="card-badge" id="brandHeaderBadge">Loading Brands...</span>
+            <button type="button" class="chart-expand-btn" data-chart-target="brandChartWrap" data-chart-title="Brand Wise Repair Analysis" data-legend-target="brandChartLegend" title="Fullscreen & Rotate" aria-label="Fullscreen & Rotate">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="21" y1="3" x2="14" y2="10"></line>
+                <polyline points="9 3 3 3 3 9"></polyline>
+                <line x1="3" y1="3" x2="10" y2="10"></line>
+                <polyline points="9 21 3 21 3 15"></polyline>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+                <polyline points="15 21 21 21 21 15"></polyline>
+                <line x1="21" y1="21" x2="14" y2="14"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- 1. Date Range Filter Controls (Inspection Date - Column AE: CHECK DATE) -->
+        <div class="brand-filter-box">
+          <div class="brand-filter-head">
+            <span class="brand-filter-label">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              <span>Date Range Filter (CHECK DATE):</span>
+            </span>
+            <button type="button" class="brand-reset-btn" id="brandDateResetBtn" title="Reset to all dates">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                <path d="M3 3v5h5"></path>
+              </svg>
+              <span>Reset</span>
+            </button>
+          </div>
+
+          <!-- Date Inputs (From - To) -->
+          <div class="brand-date-inputs-row">
+            <div class="brand-date-field">
+              <span class="brand-date-lbl">From:</span>
+              <input type="date" id="brandDateFrom" class="brand-date-input" aria-label="From Date">
+            </div>
+            <div class="brand-date-arrow" aria-hidden="true">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </div>
+            <div class="brand-date-field">
+              <span class="brand-date-lbl">To:</span>
+              <input type="date" id="brandDateTo" class="brand-date-input" aria-label="To Date">
+            </div>
+          </div>
+
+          <!-- Quick Date Range Presets -->
+          <div class="brand-presets-bar" id="brandDatePresetsBar">
+            <button type="button" class="brand-preset-chip active" data-preset="ALL">All Dates</button>
+            <button type="button" class="brand-preset-chip" data-preset="NOV">Nov '26</button>
+            <button type="button" class="brand-preset-chip" data-preset="OCT">Oct '26</button>
+            <button type="button" class="brand-preset-chip" data-preset="SEP">Sep '26</button>
+            <button type="button" class="brand-preset-chip" data-preset="AUG">Aug '26</button>
+            <button type="button" class="brand-preset-chip" data-preset="L30D">Last 30 Days</button>
+          </div>
+
+          <!-- Filtered Date Range Summary Metrics Bar -->
+          <div class="brand-span-summary" id="brandSpanSummary">
+            <div class="brand-span-item">
+              <span class="brand-span-label">Selected Span:</span>
+              <strong class="brand-span-val" id="brandSpanRangeText">All Dates (Full Dataset)</strong>
+            </div>
+            <div class="brand-span-metrics">
+              <div class="bsm-metric">
+                <span class="bsm-lbl">Audited:</span>
+                <span class="bsm-val" id="brandSpanBatches">0 batches</span>
+              </div>
+              <div class="bsm-metric">
+                <span class="bsm-lbl">Checked:</span>
+                <span class="bsm-val" id="brandSpanChecked">0</span>
+              </div>
+              <div class="bsm-metric">
+                <span class="bsm-lbl">Repair:</span>
+                <span class="bsm-val danger" id="brandSpanRepair">0 (0.0%)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Interactive Multi-Dimensional Filter Controls (Brand + Defect Category) -->
+        <div class="brand-dimension-controls">
+          <!-- Brand Selector Chips -->
+          <div class="brand-dimension-filter-group">
+            <div class="brand-filter-sublabel">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                <line x1="7" y1="7" x2="7.01" y2="7"></line>
+              </svg>
+              <span>Filter Brand:</span>
+            </div>
+            <div class="brand-filter-pills" id="brandFilterPills">
+              <!-- Dynamically populated with active brand pills -->
+              <button type="button" class="brand-pill active" data-brand="ALL">All Brands</button>
+            </div>
+          </div>
+
+          <!-- Category Focus Selector Chips -->
+          <div class="brand-dimension-filter-group">
+            <div class="brand-filter-sublabel">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+              </svg>
+              <span>Filter Category:</span>
+            </div>
+            <div class="brand-filter-pills brand-cat-pills" id="brandCategoryFilterPills">
+              <button type="button" class="brand-cat-pill active" data-category="ALL">All Categories</button>
+              <button type="button" class="brand-cat-pill" data-category="Stitching">Stitching</button>
+              <button type="button" class="brand-cat-pill" data-category="Edge-Paint">Edge-Paint</button>
+              <button type="button" class="brand-cat-pill" data-category="Workmanship">Workmanship</button>
+              <button type="button" class="brand-cat-pill" data-category="Finishing">Finishing</button>
+              <button type="button" class="brand-cat-pill" data-category="Hardware">Hardware</button>
+              <button type="button" class="brand-cat-pill" data-category="Assembly">Assembly</button>
+              <button type="button" class="brand-cat-pill" data-category="Material">Material</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Metric Legend for Chart -->
+        <div class="brand-chart-legend" id="brandChartLegend">
+          <div class="bcl-item">
+            <span class="bcl-pill-box" style="background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);"></span>
+            <span class="bcl-label" id="brandBarLegendLabel">Column: Brand Repair % (Overall Column)</span>
+          </div>
+          <div class="bcl-cats-strip" id="brandCatLegendStrip">
+            <span class="bcl-cat-dot"><i style="background:#ef4444;"></i> Stitching</span>
+            <span class="bcl-cat-dot"><i style="background:#8b5cf6;"></i> Workmanship</span>
+            <span class="bcl-cat-dot"><i style="background:#3b82f6;"></i> Hardware</span>
+            <span class="bcl-cat-dot"><i style="background:#f97316;"></i> Edge-Paint</span>
+            <span class="bcl-cat-dot"><i style="background:#10b981;"></i> Finishing</span>
+            <span class="bcl-cat-dot"><i style="background:#f59e0b;"></i> Assembly</span>
+            <span class="bcl-cat-dot"><i style="background:#06b6d4;"></i> Material</span>
+          </div>
+        </div>
+
+        <!-- 3. Dynamic SVG Chart Container -->
+        <div class="brand-chart-wrap" id="brandChartWrap">
+          <div class="empty-state">Loading brand repair analysis chart...</div>
+        </div>
+      </div>
+
+      <!-- ── UNIT QUALITY PERFORMANCE MATRIX ── -->
+      <div class="reports-card">
+        <div class="reports-card-header">
+          <h3>Unit Quality Performance Matrix</h3>
+          <span class="card-badge" id="analysisUnitCount">5 Units</span>
+        </div>
+        <div class="unit-qc-matrix-grid" id="unitAnalysisList">
+          <div class="empty-state">Loading unit QC performance...</div>
+        </div>
+      </div>
+
+      <!-- ── QC INSPECTOR BATCH CHECK PERFORMANCE (COLUMN CHART + GRAPH LINE COMBO) ── -->
+      <div class="reports-card inspector-performance-card" id="inspectorPerformanceSection">
+        <div class="reports-card-header">
+          <div class="ipc-title-block">
+            <h3>QC Inspector Performance</h3>
+            <span class="ipc-subtitle">Checked Volume, Repair Pieces &amp; Defect Rate (%)</span>
+          </div>
+          <div class="ipc-header-actions">
+            <button type="button" class="ipc-reset-btn" id="inspectorFilterResetBtn" style="display: none;" title="Reset inspector filter">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              <span>Reset</span>
+            </button>
+            <button type="button" class="chart-expand-btn" data-chart-target="inspectorComboChartWrap" data-chart-title="QC Inspector Performance" data-legend-target="inspectorChartLegend" title="Fullscreen & Rotate" aria-label="Fullscreen & Rotate">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="21" y1="3" x2="14" y2="10"></line>
+                <polyline points="9 3 3 3 3 9"></polyline>
+                <line x1="3" y1="3" x2="10" y2="10"></line>
+                <polyline points="9 21 3 21 3 15"></polyline>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+                <polyline points="15 21 21 21 21 15"></polyline>
+                <line x1="21" y1="21" x2="14" y2="14"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Metric Legend / Indicator Bar -->
+        <div class="inspector-chart-legend" id="inspectorChartLegend">
+          <div class="icl-item">
+            <span class="icl-dot icl-checked"></span>
+            <span class="icl-text">Column: <strong class="icl-val-checked">Checked Pcs</strong></span>
+          </div>
+          <div class="icl-item">
+            <span class="icl-dot icl-repair"></span>
+            <span class="icl-text">Column: <strong class="icl-val-repair">Repair Pcs</strong></span>
+          </div>
+          <div class="icl-item">
+            <span class="icl-dot icl-rate"></span>
+            <span class="icl-text">Line: <strong class="icl-val-rate">Repair %</strong></span>
+          </div>
+        </div>
+
+        <!-- Combo Chart (Column Chart + Graph Line SVG) Container -->
+        <div class="inspector-combo-chart-wrap" id="inspectorComboChartWrap">
+          <div class="empty-state">Loading QC Inspector Performance Chart...</div>
+        </div>
+
+        <!-- Inspector Breakdown Matrix / Cards -->
+        <div class="inspector-summary-list" id="inspectorSummaryList"></div>
+        <div class="leaderboard-list" id="leaderboardList" style="display: none;"></div>
+      </div>
+
+      <!-- ── DETAILED QC INSPECTION DIRECTORY (END LINE QC-FMS LOGS) ── -->
+      <div class="reports-card">
+        <div class="reports-card-header">
+          <h3>END LINE QC-FMS Inspection Logs</h3>
+          <span class="card-badge" id="repBatchCount">0 Batch Checks</span>
+        </div>
+
+        <!-- Status Filter Tabs: All, 100% Passed, Has Defects -->
+        <div class="inspection-filter-tabs" id="qcStatusFilterTabs">
+          <button type="button" class="if-tab active" data-status="ALL">All Batch Checks</button>
+          <button type="button" class="if-tab" data-status="PASS">100% Passed</button>
+          <button type="button" class="if-tab" data-status="REPAIR">Has Defects</button>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="reports-search-wrap">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input type="text" id="repBatchSearch" placeholder="Search batch, style, reason, inspector, unit...">
+        </div>
+
+        <!-- Inspection Card List -->
+        <div class="inspection-card-list" id="repBatchList">
+          <div class="empty-state">Loading inspection records from Database...</div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- ═══ BOTTOM NAVIGATION BAR ═══ -->
+    <nav class="bottom-nav">
+      <a href="index.html" class="nav-tab" aria-label="Home">
+        <span class="nav-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+        </span>
+        <span class="nav-label">Home</span>
+      </a>
+      <!-- Center Elevated Circular Green Button (FMS AI ChatBot) -->
+      <a href="fms-ai.html" class="nav-center-action" id="navCenterAiBtn" aria-label="FMS AI" title="FMS AI">
+        <div class="action-circle ai-action-circle">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path>
+            <path d="M5 3v4"></path>
+            <path d="M19 17v4"></path>
+            <path d="M3 5h4"></path>
+            <path d="M17 19h4"></path>
+          </svg>
+        </div>
+      </a>
+
+      <a href="report.html" class="nav-tab active" aria-label="Reports">
+        <span class="nav-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 20V10M12 20V4M6 20v-6"></path>
+          </svg>
+        </span>
+        <span class="nav-label">Reports</span>
+      </a>
+    </nav>
+
+    <!-- ═══ TOAST ═══ -->
+    <div class="toast" id="toast"></div>
+
+    <!-- ═══ FULLSCREEN ROTATED CHART MODAL ═══ -->
+    <div class="chart-fs-overlay" id="chartFsOverlay" aria-hidden="true">
+      <div class="chart-fs-backdrop" id="chartFsBackdrop"></div>
+      <div class="chart-fs-dialog is-rotated" id="chartFsDialog" role="dialog" aria-modal="true">
+        <div class="chart-fs-header">
+          <div class="cfs-title-col">
+            <div class="cfs-tag">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="21" y1="3" x2="14" y2="10"></line>
+                <polyline points="9 3 3 3 3 9"></polyline>
+                <line x1="3" y1="3" x2="10" y2="10"></line>
+                <polyline points="9 21 3 21 3 15"></polyline>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+                <polyline points="15 21 21 21 21 15"></polyline>
+                <line x1="21" y1="21" x2="14" y2="14"></line>
+              </svg>
+              <span>Fullscreen</span>
+            </div>
+            <h3 class="cfs-title" id="chartFsTitle">Chart View</h3>
+          </div>
+          <div class="cfs-controls">
+            <button type="button" class="cfs-btn" id="chartFsRotateBtn" title="Rotate View">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-1.19" />
+              </svg>
+              <span class="cfs-btn-text">Portrait</span>
+            </button>
+            <button type="button" class="cfs-btn cfs-close-btn" id="chartFsCloseBtn" aria-label="Close Fullscreen">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="chart-fs-legend-bar" id="chartFsLegendBar" style="display: none;"></div>
+
+        <div class="chart-fs-body" id="chartFsBody"></div>
+
+        <div class="chart-fs-footer">
+          <span class="cfs-footer-tip">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+              <line x1="12" y1="18" x2="12" y2="18.01"></line>
+            </svg>
+            Rotate your phone sideways for widescreen inspection
+          </span>
+          <span>Tap Rotate to flip &bull; Tap &times; to exit</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="xlsx.full.min.js?v=1.0.5"></script>
+  <script src="jspdf.umd.min.js?v=1.0.5"></script>
+  <script src="jspdf.plugin.autotable.min.js?v=1.0.5"></script>
+  <script src="endline_qc_data.js?v=2.6.0"></script>
+  <script src="db.js?v=2.8.0"></script>
+  <script src="report-eol.js?v=2.9.5"></script>
+</body>
+
+</html>

@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#fbf6eb">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="My QC Report">
+  <link rel="apple-touch-icon" href="https://res.cloudinary.com/dnrgcigsj/image/upload/v1789365942/trio-dark-logo_ayyhkh.svg">
+  <title>My QC Report — End of Line Entries</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css?v=2.7.0">
+  <link rel="stylesheet" href="my-report.css?v=2.0.0">
+  <script>
+    // Auth guard: bounce to login if not signed in
+    if (!localStorage.getItem('nimbus_logged_in')) {
+      window.location.href = 'login.html';
+    }
+  </script>
+</head>
+
+<body>
+  <div class="app" style="padding-top: calc(62px + env(safe-area-inset-top));">
+
+    <!-- ═══ USER PROFILE CARD / SHEET ═══ -->
+    <div class="profile-overlay" id="profileOverlay"></div>
+    <div class="profile-sheet" id="profileSheet">
+      <div class="profile-sheet-header">
+        <span class="ps-header-title">My Profile</span>
+        <button class="profile-close-btn" id="profileCloseBtn" aria-label="Close profile">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="ps-user-card">
+        <div class="ps-avatar" id="profileAvatarText">QC</div>
+        <div class="ps-user-details">
+          <h3 class="ps-user-name" id="profileUserName">Inspector</h3>
+          <span class="ps-company-tag">Trio Trend Exports Pvt. Ltd.</span>
+        </div>
+      </div>
+
+      <div class="ps-info-grid">
+        <div class="ps-info-item">
+          <span class="ps-info-label">Active Stage</span>
+          <span class="ps-info-val">End of Line QC</span>
+        </div>
+        <div class="ps-info-item">
+          <span class="ps-info-label">System Status</span>
+          <span class="ps-info-val ps-status-online">
+            <span class="ps-status-dot"></span> Online
+          </span>
+        </div>
+      </div>
+
+      <div class="ps-actions">
+        <button type="button" class="ps-logout-btn" id="profileLogoutBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          <span>Sign Out</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ═══ TOPBAR / HEADER ═══ -->
+    <header class="topbar" style="position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 420px; z-index: 85; box-sizing: border-box; background-color: #fbf6eb;">
+      <a href="index.html" class="icon-btn" id="backToHomeBtn" title="Back to Home" aria-label="Back to Home">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+      </a>
+
+      <div class="brand-center">
+        <img src="https://res.cloudinary.com/dnrgcigsj/image/upload/v1789365942/trio-dark-logo_ayyhkh.svg"
+          alt="Trio Trend Exports" class="topbar-brand-logo">
+        <span class="topbar-brand-divider"></span>
+        <div class="topbar-brand-text">
+          <span class="brand-title">My QC Report</span>
+          <span class="brand-sub">End of Line Entries</span>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <button class="icon-btn" id="myRepSyncBtn" title="Sync Live Data" aria-label="Sync Data">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-1.19" />
+          </svg>
+        </button>
+
+        <button class="avatar-badge" id="avatarBtn" title="Profile" aria-label="User Profile">
+          <span id="userAvatarText">QC</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ═══ MAIN CONTENT ═══ -->
+    <main class="content" style="padding-top: 14px;">
+
+      <!-- ── HERO / INSPECTOR CARD (STRICTLY LOGGED IN USER — NO DROPDOWN) ── -->
+      <section class="my-rep-hero">
+        <div class="my-rep-hero-top">
+          <div class="mrh-user-block">
+            <div class="mrh-avatar" id="heroAvatar">QC</div>
+            <div class="mrh-name-wrap">
+              <span class="mrh-greeting">My Inspection Report</span>
+              <span class="mrh-username" id="heroUserName">Inspector</span>
+            </div>
+          </div>
+
+          <!-- Clean role pill — No dropdown! -->
+          <div class="mrh-role-pill">
+            <span class="mrh-dot"></span>
+            <span id="heroRoleBadge">Live (5s)</span>
+          </div>
+        </div>
+
+        <div style="font-size: 11px; color: rgba(255,255,255,0.85); line-height: 1.4;">
+          Personal inspection submissions for <strong id="heroUserNameSub" style="color: #ffffff;">Inspector</strong> from <strong>END OF LINE</strong> sheet &bull; Auto-refreshes every 5s.
+        </div>
+      </section>
+
+      <!-- ── KPI METRICS GRID ── -->
+      <section class="my-rep-kpi-grid">
+        <div class="mr-kpi-card">
+          <span class="mr-kpi-label">Entries Made</span>
+          <span class="mr-kpi-val text-green" id="kpiTotalEntries">0</span>
+          <span class="mr-kpi-sub">Total batch checks</span>
+        </div>
+
+        <div class="mr-kpi-card">
+          <span class="mr-kpi-label">Checked Qty</span>
+          <span class="mr-kpi-val text-teal" id="kpiCheckedPcs">0</span>
+          <span class="mr-kpi-sub">Total inspected pcs</span>
+        </div>
+
+        <div class="mr-kpi-card">
+          <span class="mr-kpi-label">W/H Passed</span>
+          <span class="mr-kpi-val text-green" id="kpiWhPcs">0</span>
+          <span class="mr-kpi-sub">Approved to store</span>
+        </div>
+
+        <div class="mr-kpi-card">
+          <span class="mr-kpi-label">Repair Qty</span>
+          <span class="mr-kpi-val text-rose" id="kpiRepairPcs">0</span>
+          <span class="mr-kpi-sub">Defects flagged</span>
+        </div>
+      </section>
+
+      <!-- ── FILTER CARD: DATE RANGE & LIVE SEARCH ── -->
+      <section class="my-rep-filter-card">
+        <div class="filter-section-title">
+          <span>Date Range Filter</span>
+          <span id="activeDatePresetLabel" style="font-size: 9.5px; color: var(--text-muted); font-weight: 600;">All Time</span>
+        </div>
+
+        <!-- Date Presets Horizontal Scroll -->
+        <div class="date-presets-scroll" id="datePresetsContainer">
+          <button type="button" class="date-preset-pill active" data-preset="ALL">All Time</button>
+          <button type="button" class="date-preset-pill" data-preset="TODAY">Today</button>
+          <button type="button" class="date-preset-pill" data-preset="YESTERDAY">Yesterday</button>
+          <button type="button" class="date-preset-pill" data-preset="7DAYS">Last 7 Days</button>
+          <button type="button" class="date-preset-pill" data-preset="MONTH">This Month</button>
+        </div>
+
+        <!-- Custom Date Range Inputs -->
+        <div class="custom-date-row">
+          <div class="date-input-group">
+            <label for="repDateFrom">From Date</label>
+            <input type="date" id="repDateFrom" class="date-field">
+          </div>
+          <div class="date-input-group">
+            <label for="repDateTo">To Date</label>
+            <input type="date" id="repDateTo" class="date-field">
+          </div>
+          <button type="button" class="date-clear-btn" id="repDateResetBtn" title="Reset Dates">Clear</button>
+        </div>
+
+        <!-- Live Search Bar -->
+        <div class="search-bar-wrap">
+          <span class="search-input-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </span>
+          <input type="text" class="my-rep-search-input" id="repSearchInput" placeholder="Search Batch, Style, Colour, PO, Unit..." autocomplete="off">
+          <button type="button" class="search-clear-btn" id="repSearchClearBtn" aria-label="Clear Search">&times;</button>
+        </div>
+      </section>
+
+      <!-- ── RESULTS HEADER & EXPORT ── -->
+      <div class="results-header-row">
+        <span class="results-count-text" id="repResultsCount">Showing 0 entries</span>
+        <button type="button" class="results-export-btn" id="repExportCsvBtn" title="Export entries to Excel/CSV">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>Export Excel</span>
+        </button>
+      </div>
+
+      <!-- ── INSPECTION ENTRIES LIST ── -->
+      <section class="my-rep-entries-list" id="myRepEntriesList">
+        <!-- Dynamically populated by my-report.js -->
+        <div class="my-rep-empty-state">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <h4>Loading Entries...</h4>
+          <p>Fetching your verified QC inspection records from END OF LINE</p>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ═══ BOTTOM NAVIGATION ═══ -->
+    <nav class="bottom-nav">
+      <a href="index.html" class="nav-tab" aria-label="Home" style="text-decoration:none;">
+        <span class="nav-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+        </span>
+        <span class="nav-label">Home</span>
+      </a>
+      <!-- Center Elevated Circular Green Button (FMS AI ChatBot) -->
+      <a href="fms-ai.html" class="nav-center-action" id="navCenterAiBtn" aria-label="FMS AI" title="FMS AI">
+        <div class="action-circle ai-action-circle">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path>
+            <path d="M5 3v4"></path>
+            <path d="M19 17v4"></path>
+            <path d="M3 5h4"></path>
+            <path d="M17 19h4"></path>
+          </svg>
+        </div>
+      </a>
+
+      <a href="report.html" class="nav-tab active" aria-label="Reports" style="text-decoration:none;">
+        <span class="nav-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 20V10M12 20V4M6 20v-6"></path>
+          </svg>
+        </span>
+        <span class="nav-label">Reports</span>
+      </a>
+    </nav>
+
+    <!-- ═══ TOAST ═══ -->
+    <div class="toast" id="toast"></div>
+
+  </div>
+
+  <script src="xlsx.full.min.js?v=1.0.5"></script>
+  <script src="end_of_line_data.js?v=3.0.0"></script>
+  <script src="db.js?v=2.8.0"></script>
+  <script src="my-report.js?v=2.0.0"></script>
+</body>
+
+</html>
