@@ -361,9 +361,14 @@ async function fetchLiveEndLineQcFromGoogleSheet(forceNocache = false) {
       const brand = c[17] && c[17].v ? String(c[17].v).trim() : '';
       const repairCategory = '';
 
+      if (String(batchId || '').toUpperCase().includes('TT-0025')) return;
+
       const isAudited = (checkedQty > 0 || whQty > 0 || repairQty > 0 || (reason && reason.length > 0));
       const status = (repairQty > 0) ? 'Repair' : ((checkedQty > 0 || whQty > 0) ? 'Approved' : 'Pending');
-      const qcName = (qcNameRaw && qcNameRaw.toLowerCase() !== 'unassigned') ? qcNameRaw : (submittedBy || 'Unassigned');
+      const qcClean = (qcNameRaw && !/^(unassigned|qc inspector|inspector|unknown)$/i.test(qcNameRaw))
+        ? qcNameRaw
+        : ((submittedBy && !/^(unassigned|qc inspector|inspector|unknown)$/i.test(submittedBy)) ? submittedBy : 'Unassigned');
+      const qcName = qcClean;
 
       records.push({
         id: idx + 1,
@@ -420,10 +425,15 @@ async function fetchBundledEndLineQcJson() {
 async function mergeLocalSubmissions(records) {
   if (typeof FMS_DB === 'undefined') return records;
   try {
+    if (typeof FMS_DB.purgeInvalidSubmissions === 'function') {
+      await FMS_DB.purgeInvalidSubmissions();
+    }
     const subs = (await FMS_DB.getSubmissions()) || [];
-    if (!subs || subs.length === 0) return records;
 
-    const list = [...(records || [])];
+    // Filter out any invalid test batch like TT-0025 from base records
+    const list = [...(records || [])].filter(r => !String(r.batchId || '').toUpperCase().includes('TT-0025'));
+    if (!subs || subs.length === 0) return list;
+
     const map = new Map();
     list.forEach((r, idx) => {
       const b = String(r.batchId || r.batch_id || '').trim().toUpperCase();
@@ -434,6 +444,9 @@ async function mergeLocalSubmissions(records) {
       const f = s.formData;
       if (!f || !f.batchId) return;
       const b = String(f.batchId).trim().toUpperCase();
+
+      // Exclude TT-0025 or test batches
+      if (b.includes('TT-0025') || b === 'TT-0025/26-27') return;
 
       if (map.has(b)) {
         const idx = map.get(b);
@@ -461,7 +474,7 @@ async function mergeLocalSubmissions(records) {
           reason: (f.reason !== undefined && f.reason !== null) ? String(f.reason) : (existing.reason || ''),
           repairCategory: f.repairCategory || f.repair_category || f['Repair Category'] || existing.repairCategory || '',
           checkDate: checkDate || existing.checkDate || todayStr,
-          qcName: f.qcName || existing.qcName || 'QC Inspector',
+          qcName: (f.qcName && f.qcName !== 'QC Inspector') ? f.qcName : (existing.qcName || 'Unassigned'),
           unit: f.unit || existing.unit || '',
           style: f.style || existing.style || '',
           colour: f.colour || existing.colour || '',
@@ -473,8 +486,18 @@ async function mergeLocalSubmissions(records) {
           status: 'Approved'
         };
       } else {
-        // If not in Google Sheet, only show if pending (not synced then deleted)
+        // If not in Google Sheet, only show if pending AND recently submitted (within 24 hrs)
         if (s.status === 'synced') return;
+        const subAge = s.timestamp ? (Date.now() - new Date(s.timestamp).getTime()) : 0;
+        if (subAge > 86400000) return; // Older than 24 hours and not in Google Sheet: ignore!
+
+        // If batch doesn't exist anywhere in bundled production data or sheets, skip orphan test entry
+        let resolvedBrand = f.brand || '';
+        if (!resolvedBrand && typeof window !== 'undefined' && Array.isArray(window.BUNDLED_ENDLINE_QC)) {
+          const match = window.BUNDLED_ENDLINE_QC.find(m => String(m.batchId || '').trim().toUpperCase() === b);
+          if (match && match.brand) resolvedBrand = match.brand;
+        }
+        if (!resolvedBrand) return; // Do NOT add batches without authentic brand to official reports!
 
         const checkedQty = Number(f.checkedQty || 0);
         const repairQty = Number(f.repairQty || 0);
@@ -489,10 +512,11 @@ async function mergeLocalSubmissions(records) {
           colour: f.colour || '',
           po: f.po || '',
           sku: f.sku || '',
+          brand: resolvedBrand,
           floor: f.floor || '',
           unit: f.unit || '',
           fabricator: f.fabricator || '',
-          qcName: f.qcName || 'QC Inspector',
+          qcName: (f.qcName && f.qcName !== 'QC Inspector') ? f.qcName : 'Unassigned',
           etd: f.etd || '',
           checkDate: checkDate,
           checkedQty,
@@ -513,7 +537,7 @@ async function mergeLocalSubmissions(records) {
     return list;
   } catch (err) {
     console.warn('mergeLocalSubmissions notice:', err);
-    return records;
+    return (records || []).filter(r => !String(r.batchId || '').toUpperCase().includes('TT-0025'));
   }
 }
 
@@ -526,9 +550,16 @@ async function loadQcDataFromIndexedDB(forceReload = false) {
     eolQcCache = [];
   }
 
+  // Purge any invalid/test submissions (e.g. TT-0025 ghost records) right away
+  if (typeof FMS_DB !== 'undefined' && typeof FMS_DB.purgeInvalidSubmissions === 'function') {
+    try {
+      await FMS_DB.purgeInvalidSubmissions();
+    } catch (_) {}
+  }
+
   // Pre-seed immediately with bundled data if available so first render is instantaneous
   if ((!eolQcCache || eolQcCache.length === 0) && typeof window !== 'undefined' && Array.isArray(window.BUNDLED_ENDLINE_QC) && window.BUNDLED_ENDLINE_QC.length > 0) {
-    eolQcCache = window.BUNDLED_ENDLINE_QC;
+    eolQcCache = window.BUNDLED_ENDLINE_QC.filter(r => !String(r.batchId || '').toUpperCase().includes('TT-0025'));
   }
 
   if (eolQcCache && eolQcCache.length > 0 && !forceReload) {
@@ -539,7 +570,7 @@ async function loadQcDataFromIndexedDB(forceReload = false) {
           await FMS_DB.init();
           const recs = await FMS_DB.getEndLineQc();
           if (recs && recs.length > 0) {
-            eolQcCache = await mergeLocalSubmissions(recs);
+            eolQcCache = (await mergeLocalSubmissions(recs)).filter(r => !String(r.batchId || '').toUpperCase().includes('TT-0025'));
             renderReportsView();
           }
         } catch (_) {}
@@ -560,7 +591,7 @@ async function loadQcDataFromIndexedDB(forceReload = false) {
 
       if (records && records.length > 0) {
         records = await mergeLocalSubmissions(records);
-        eolQcCache = records;
+        eolQcCache = (records || []).filter(r => !String(r.batchId || '').toUpperCase().includes('TT-0025'));
         return eolQcCache;
       }
     }
@@ -568,7 +599,7 @@ async function loadQcDataFromIndexedDB(forceReload = false) {
     const localBundled = await fetchBundledEndLineQcJson();
     if (localBundled && localBundled.length > 0) {
       let merged = await mergeLocalSubmissions(localBundled);
-      eolQcCache = merged;
+      eolQcCache = (merged || []).filter(r => !String(r.batchId || '').toUpperCase().includes('TT-0025'));
       if (typeof FMS_DB !== 'undefined') {
         await FMS_DB.saveEndLineQc(localBundled);
       }
@@ -578,7 +609,7 @@ async function loadQcDataFromIndexedDB(forceReload = false) {
     console.warn('IndexedDB load error, fallback to bundled:', err);
   }
 
-  return eolQcCache || [];
+  return (eolQcCache || []).filter(r => !String(r.batchId || '').toUpperCase().includes('TT-0025'));
 }
 
 // Non-blocking background sync from Google Sheet (Never blocks the user interface!)
@@ -586,7 +617,7 @@ async function refreshFromSheetInBackground() {
   if (typeof FMS_DB !== 'undefined') {
     const records = await FMS_DB.getEndLineQc();
     if (records && records.length > 0) {
-      eolQcCache = records;
+      eolQcCache = (records || []).filter(r => !String(r.batchId || '').toUpperCase().includes('TT-0025'));
       renderReportsView();
     }
   }
@@ -705,6 +736,8 @@ function getBaseFilteredRecords() {
   const search = (currentSearchTerm || '').trim().toLowerCase();
 
   return eolQcCache.filter(item => {
+    if (String(item.batchId || '').toUpperCase().includes('TT-0025')) return false;
+
     // If live search is active, search across ALL batches (audited and pending)
     if (search !== '') {
       const hay = [
@@ -2212,6 +2245,7 @@ function renderUnitCategoryAnalysis() {
 
   // 1. Gather audited records from cache
   const auditedRecords = (eolQcCache || []).filter(r => 
+    !String(r.batchId || '').toUpperCase().includes('TT-0025') &&
     r.isAudited !== false && (Number(r.checkedQty) > 0 || Number(r.repairQty) > 0 || Number(r.whQty) > 0 || (r.reason && r.reason !== ''))
   );
 
@@ -3104,7 +3138,7 @@ function renderBrandRepairChart() {
   const catLegendStrip = document.getElementById('brandCatLegendStrip');
   if (!chartWrap) return;
 
-  const allRecords = eolQcCache || [];
+  const allRecords = (eolQcCache || []).filter(r => !String(r.batchId || '').toUpperCase().includes('TT-0025'));
 
   // Filter by Date Range
   const dateFiltered = allRecords.filter(r => {
@@ -3117,13 +3151,16 @@ function renderBrandRepairChart() {
 
   // Filter audited batches
   const auditedFiltered = dateFiltered.filter(r =>
+    !String(r.batchId || '').toUpperCase().includes('TT-0025') &&
     r.isAudited !== false && (Number(r.checkedQty) > 0 || Number(r.repairQty) > 0 || Number(r.whQty) > 0 || (r.reason && r.reason !== ''))
   );
 
   // Group by Brand
   const brandMap = {};
   auditedFiltered.forEach(r => {
+    if (String(r.batchId || '').toUpperCase().includes('TT-0025')) return;
     const brand = normalizeBrandName(r.brand);
+    if (!brand || brand.toUpperCase() === 'UNKNOWN') return;
     if (!brandMap[brand]) {
       brandMap[brand] = {
         brand: brand,
@@ -3163,18 +3200,22 @@ function renderBrandRepairChart() {
   });
 
   const allBrandNames = Object.keys(brandMap)
-    .filter(b => brandMap[b].checked > 0 || brandMap[b].repair > 0)
+    .filter(b => b.toUpperCase() !== 'UNKNOWN' && (brandMap[b].checked > 0 || brandMap[b].repair > 0))
     .sort((a, b) => brandMap[b].checked - brandMap[a].checked);
 
   // Filter by selected brand if specified
-  const isAllBrands = currentBrandFilter === 'ALL';
+  const isAllBrands = currentBrandFilter === 'ALL' || currentBrandFilter.toUpperCase() === 'UNKNOWN';
+  if (currentBrandFilter.toUpperCase() === 'UNKNOWN') currentBrandFilter = 'ALL';
   const targetBrands = isAllBrands
     ? allBrandNames
     : allBrandNames.filter(b => b.toUpperCase() === currentBrandFilter.toUpperCase());
 
   // Dynamically compute display records and span metrics based on selected brand
   const displayRecords = isAllBrands
-    ? auditedFiltered
+    ? auditedFiltered.filter(r => {
+        const b = normalizeBrandName(r.brand);
+        return b && b.toUpperCase() !== 'UNKNOWN';
+      })
     : auditedFiltered.filter(r => normalizeBrandName(r.brand).toUpperCase() === currentBrandFilter.toUpperCase());
 
   // Update Span Summary
@@ -3632,12 +3673,15 @@ function renderInspectorComboChart(filteredRecords) {
   const inspMap = {};
 
   basePool.forEach(r => {
+    // Exclude any TT-0025 ghost record
+    if (String(r.batchId || '').toUpperCase().includes('TT-0025')) return;
+
     // Only count audited records with non-empty, valid QC names from Column AD
     const isAudited = r.isAudited !== false && (Number(r.checkedQty) > 0 || Number(r.repairQty) > 0 || Number(r.whQty) > 0 || (r.reason && r.reason.length > 0));
     if (!isAudited) return;
 
     const rawName = (r.qcName || '').trim();
-    if (!rawName || rawName.toLowerCase() === 'unassigned') return;
+    if (!rawName || /^(unassigned|qc inspector|inspector|unknown|n\/a|null|undefined)$/i.test(rawName)) return;
 
     if (!inspMap[rawName]) {
       inspMap[rawName] = {
