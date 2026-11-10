@@ -797,7 +797,8 @@
 .ipc-header-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .ipc-reset-btn {
@@ -3775,7 +3776,8 @@
 .uc-header-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 /* Modal Overlay */
@@ -4066,7 +4068,7 @@
 .btc-header-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-shrink: 0;
 }
 
