@@ -1,5 +1,5 @@
 {
-  "version": "2.0.7",
+  "version": "2.0.8",
   "size": "12.8 MB",
   "notes": "Removed Month-by-Month Metric Insight Tiles grid as requested by user; kept streamlined Multi-Category trend graph and column statues"
 }
