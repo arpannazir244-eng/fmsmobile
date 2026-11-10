@@ -661,7 +661,7 @@ class FmsDatabase {
       floor: (formData.floor || '').toString(),
       unit: (formData.unit || '').toString(),
       fabricator: (formData.fabricator || '').toString(),
-      qcName: (formData.qcName || username || 'QC Inspector').toString(),
+      qcName: (formData.qcName || username || 'Unassigned').toString(),
       etd: (formData.etd || '').toString(),
       checkDate: formData.checkDate || todayStr,
       checkedQty: checkedQuantity,
@@ -819,12 +819,80 @@ class FmsDatabase {
     }
   }
 
-  // Purge any submissions from local store that are already audited in Google Sheets
+  // Thoroughly purge orphan, dummy, or invalid test submissions (e.g. TT-0025/26-27)
+  async purgeInvalidSubmissions() {
+    try {
+      await this.init();
+      if (!this.db) return;
+
+      // 1. Purge from submissions store
+      if (this.db.objectStoreNames.contains('submissions')) {
+        await new Promise((resolve) => {
+          const tx = this.db.transaction(['submissions'], 'readwrite');
+          const store = tx.objectStore('submissions');
+          const req = store.getAll();
+          req.onsuccess = () => {
+            const subs = req.result || [];
+            subs.forEach(s => {
+              const b = String(s.formData ? s.formData.batchId : (s.batchId || '')).trim().toUpperCase();
+              if (b.includes('TT-0025') || b === 'TT-0025/26-27' || s.status === 'synced') {
+                store.delete(s.id);
+                console.log('[FMS DB] Purged invalid submission:', b);
+              }
+            });
+            resolve();
+          };
+          req.onerror = () => resolve();
+        });
+      }
+
+      // 2. Purge from endline_qc store
+      if (this.db.objectStoreNames.contains('endline_qc')) {
+        await new Promise((resolve) => {
+          const tx = this.db.transaction(['endline_qc'], 'readwrite');
+          const store = tx.objectStore('endline_qc');
+          const req = store.getAll();
+          req.onsuccess = () => {
+            const list = req.result || [];
+            list.forEach(r => {
+              const b = String(r.batchId || r.batch_id || '').trim().toUpperCase();
+              if (b.includes('TT-0025') || b === 'TT-0025/26-27') {
+                if (r.id !== undefined) {
+                  store.delete(r.id);
+                  console.log('[FMS DB] Purged TT-0025 from endline_qc store:', b);
+                }
+              }
+            });
+            resolve();
+          };
+          req.onerror = () => resolve();
+        });
+      }
+
+      // 3. Clean from localStorage
+      try {
+        const lastSub = localStorage.getItem('fms_eol_last_submission');
+        if (lastSub && lastSub.includes('TT-0025')) {
+          localStorage.removeItem('fms_eol_last_submission');
+        }
+      } catch (_) {}
+    } catch (e) {
+      console.warn('purgeInvalidSubmissions error:', e);
+    }
+  }
+
+  // Purge any submissions from local store that are already audited in Google Sheets or orphan/test submissions
   async pruneSyncedSubmissions(sheetRecords) {
+    await this.purgeInvalidSubmissions();
     if (!sheetRecords || sheetRecords.length === 0) return;
     try {
       await this.init();
       if (!this.db || !this.db.objectStoreNames.contains('submissions')) return;
+      const allSheetBatches = new Set(
+        sheetRecords
+          .map(r => String(r.batchId || '').trim().toUpperCase())
+          .filter(Boolean)
+      );
       const auditedBatches = new Set(
         sheetRecords
           .filter(r => r.isAudited || Number(r.checkedQty) > 0 || Number(r.repairQty) > 0)
@@ -841,7 +909,9 @@ class FmsDatabase {
           subs.forEach(s => {
             if (s && s.formData && s.formData.batchId) {
               const b = String(s.formData.batchId).trim().toUpperCase();
-              if (auditedBatches.has(b)) {
+              const subAge = s.timestamp ? (Date.now() - new Date(s.timestamp).getTime()) : 0;
+              // Delete if audited in sheet, or marked synced, or test TT-0025, or not in sheet & > 24h old
+              if (auditedBatches.has(b) || s.status === 'synced' || b.includes('TT-0025') || (!allSheetBatches.has(b) && subAge > 86400000)) {
                 store.delete(s.id);
               }
             }
