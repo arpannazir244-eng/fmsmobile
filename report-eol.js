@@ -563,8 +563,9 @@ async function loadQcDataFromIndexedDB(forceReload = false) {
   }
 
   if (eolQcCache && eolQcCache.length > 0 && !forceReload) {
-    // Asynchronously sync with IndexedDB in background so local edits are reflected without blocking initial paint
-    if (typeof FMS_DB !== 'undefined') {
+    // Only perform the background IndexedDB sync ONCE on initial page startup!
+    if (!window._isInitialDbSyncDone && typeof FMS_DB !== 'undefined') {
+      window._isInitialDbSyncDone = true;
       setTimeout(async () => {
         try {
           await FMS_DB.init();
@@ -1245,8 +1246,14 @@ function renderStandardCategoryReport(baseRecords, totalRepairsCount) {
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         <span>Reset: ${currentCategoryFilter}</span>
       `;
-      resetBtn.onclick = () => {
+      resetBtn.onclick = (e) => {
+        e.stopPropagation();
         currentCategoryFilter = 'ALL';
+        currentBrandCategoryFilter = 'ALL';
+        ucSelectedCategory = 'ALL';
+        currentTrendCategory = 'ALL';
+        updateBrandCategoryPillsUI();
+        updateUcFilterPillsUI();
         renderReportsView();
       };
     } else {
@@ -1322,9 +1329,16 @@ function renderStandardCategoryReport(baseRecords, totalRepairsCount) {
 
     // Attach click listeners to columns
     chartEl.querySelectorAll('.col-chart-col').forEach(col => {
-      col.addEventListener('click', () => {
+      col.addEventListener('click', (e) => {
+        e.stopPropagation();
         const catName = col.getAttribute('data-cat');
-        currentCategoryFilter = (currentCategoryFilter === catName) ? 'ALL' : catName;
+        const nextCat = (currentCategoryFilter.toLowerCase() === (catName || '').toLowerCase()) ? 'ALL' : catName;
+        currentCategoryFilter = nextCat;
+        currentBrandCategoryFilter = nextCat;
+        ucSelectedCategory = nextCat;
+        currentTrendCategory = nextCat;
+        updateBrandCategoryPillsUI();
+        updateUcFilterPillsUI();
         renderReportsView();
       });
     });
@@ -1380,9 +1394,16 @@ function renderStandardCategoryReport(baseRecords, totalRepairsCount) {
     }).join('');
 
     catListEl.querySelectorAll('.standard-cat-card').forEach(card => {
-      card.addEventListener('click', () => {
+      card.addEventListener('click', (e) => {
+        e.stopPropagation();
         const catName = card.getAttribute('data-cat');
-        currentCategoryFilter = (currentCategoryFilter === catName) ? 'ALL' : catName;
+        const nextCat = (currentCategoryFilter.toLowerCase() === (catName || '').toLowerCase()) ? 'ALL' : catName;
+        currentCategoryFilter = nextCat;
+        currentBrandCategoryFilter = nextCat;
+        ucSelectedCategory = nextCat;
+        currentTrendCategory = nextCat;
+        updateBrandCategoryPillsUI();
+        updateUcFilterPillsUI();
         renderReportsView();
       });
     });
@@ -1777,11 +1798,15 @@ function renderMonthlyRepairTrendChart() {
   const isAll = currentTrendCategory === 'ALL';
   const activeCatObj = STANDARD_CATEGORIES.find(c => c.name.toLowerCase() === currentTrendCategory.toLowerCase());
 
-  if (barLabel) barLabel.textContent = 'Repairing % (Overall Column)';
+  if (barLabel) {
+    barLabel.textContent = isAll ? 'Repairing % (Overall Column)' : `${activeCatObj.name} Defect % (Column)`;
+  }
   if (lineLabel) {
     lineLabel.textContent = isAll ? '7 Defect Categories (Multiple Lines)' : `${activeCatObj.name} Defect Line`;
   }
-  if (barBox) barBox.style.background = 'linear-gradient(180deg, #38bdf8 0%, #0284c7 100%)';
+  if (barBox) {
+    barBox.style.background = isAll ? 'linear-gradient(180deg, #38bdf8 0%, #0284c7 100%)' : (activeCatObj ? activeCatObj.color : '#0284c7');
+  }
   if (lineBox) {
     const lCol = !isAll && activeCatObj ? activeCatObj.color : '#ef4444';
     lineBox.style.backgroundColor = lCol;
@@ -1791,8 +1816,8 @@ function renderMonthlyRepairTrendChart() {
   // 2. Prepare plot data for targetMonths
   const plotData = targetMonths.map(ym => {
     const data = monthMap[ym];
-    const totalRepair = data.repair;
-    const totalRate = data.checked > 0 ? +((totalRepair / data.checked) * 100).toFixed(1) : 0.0;
+    const catPcs = (!isAll && activeCatObj) ? (data.cats[activeCatObj.name] || 0) : data.repair;
+    const catRate = data.checked > 0 ? +((catPcs / data.checked) * 100).toFixed(1) : 0.0;
     const label = formatMonthLabel(ym);
     const shortLabel = label.replace(/(\w{3})\w*\s*(\d{4})/, "$1 '$2").replace('20', '');
     return {
@@ -1801,8 +1826,10 @@ function renderMonthlyRepairTrendChart() {
       shortLabel: shortLabel,
       checked: data.checked,
       wh: data.wh,
-      totalRepair: totalRepair,
-      totalRate: totalRate,
+      totalRepair: catPcs,
+      overallRepair: data.repair,
+      totalRate: catRate,
+      overallRate: data.checked > 0 ? +((data.repair / data.checked) * 100).toFixed(1) : 0.0,
       batches: data.batches,
       cats: data.cats
     };
@@ -1888,28 +1915,32 @@ function renderMonthlyRepairTrendChart() {
     <line x1="${padLeft - 6}" y1="${baseY}" x2="${padRight + 6}" y2="${baseY}" stroke="rgba(13, 92, 58, 0.2)" stroke-width="1.2" />
   `;
 
-  // 1. Column Statues (Pillars representing Overall Month Repairing %)
+  // 1. Column Statues (Pillars representing Overall Month Repairing % or Selected Category %)
   const barW = Math.min(38, Math.max(26, stepX * 0.44));
   const barsSvg = points.map(p => {
     const bx = p.cx - (barW / 2);
     const isFilteredMonth = currentMonthFilter === p.month;
-    const colFill = isFilteredMonth ? 'url(#trendColumnActiveGrad)' : 'url(#trendColumnStatueGrad)';
+    const colFill = !isAll && activeCatObj
+      ? activeCatObj.color
+      : (isFilteredMonth ? 'url(#trendColumnActiveGrad)' : 'url(#trendColumnStatueGrad)');
+
+    const catTitle = !isAll && activeCatObj ? `${activeCatObj.name} Defect` : 'Overall Repairing';
 
     return `
       <g class="trend-col-bar ${isFilteredMonth ? 'active-month' : ''}" data-month="${p.month}" style="cursor: pointer;">
         <!-- Column Pillar -->
         <rect x="${bx.toFixed(1)}" y="${p.barY.toFixed(1)}" width="${barW.toFixed(1)}" height="${p.barH.toFixed(1)}" rx="6" fill="${colFill}" filter="url(#columnShadow)" opacity="0.92">
-          <title>Month: ${p.label}\nOverall Repairing %: ${p.totalRate}%\nRepair Pieces: ${p.totalRepair.toLocaleString()} pcs\nChecked: ${p.checked.toLocaleString()} pcs</title>
+          <title>Month: ${p.label}\n${catTitle} %: ${p.totalRate}%\nRepair Pieces: ${p.totalRepair.toLocaleString()} pcs\nChecked: ${p.checked.toLocaleString()} pcs</title>
         </rect>
 
         <!-- Repair Volume (pcs) inside or above column -->
-        <text x="${p.cx.toFixed(1)}" y="${(p.barY - 18).toFixed(1)}" font-size="10" font-weight="800" fill="#0f172a" text-anchor="middle">
+        <text x="${p.cx.toFixed(1)}" y="${(p.barY - 26).toFixed(1)}" font-size="10" font-weight="800" fill="#0f172a" text-anchor="middle">
           ${p.totalRepair.toLocaleString()}
         </text>
 
         <!-- Repairing Percentage Callout Badge on Top -->
-        <g transform="translate(${p.cx.toFixed(1)}, ${(p.barY - 8).toFixed(1)})">
-          <rect x="-19" y="-8.5" width="38" height="16" rx="4" fill="${isFilteredMonth ? '#0b5c39' : '#0f172a'}" />
+        <g transform="translate(${p.cx.toFixed(1)}, ${(p.barY - 14).toFixed(1)})">
+          <rect x="-19" y="-8" width="38" height="16" rx="4" fill="${isFilteredMonth ? '#0b5c39' : (!isAll && activeCatObj ? activeCatObj.color : '#0f172a')}" />
           <text x="0" y="3.5" font-size="9" font-weight="800" fill="#ffffff" text-anchor="middle">${p.totalRate}%</text>
         </g>
       </g>
@@ -1975,12 +2006,6 @@ function renderMonthlyRepairTrendChart() {
             <circle cx="${cp.cx.toFixed(1)}" cy="${cp.cy.toFixed(1)}" r="${nodeRadius + 2}" fill="${cat.color}" fill-opacity="0.25" />
             <circle cx="${cp.cx.toFixed(1)}" cy="${cp.cy.toFixed(1)}" r="${nodeRadius}" fill="#ffffff" stroke="${cat.color}" stroke-width="2" />
             <title>${cat.name}: ${cp.rate.toFixed(1)}% (${cp.pcs.toLocaleString()} pcs in ${cp.month})</title>
-            ${isSingleFocus ? `
-              <g transform="translate(${cp.cx.toFixed(1)}, ${(cp.cy - 12).toFixed(1)})">
-                <rect x="-16" y="-6.5" width="32" height="13" rx="3" fill="${cat.color}" />
-                <text x="0" y="3" font-size="8" font-weight="800" fill="#ffffff" text-anchor="middle">${cp.rate.toFixed(1)}%</text>
-              </g>
-            ` : ''}
           </g>
         `;
       }
@@ -2047,13 +2072,23 @@ function renderMonthlyRepairTrendChart() {
   });
 }
 
+let trendCategoryEventsInitialized = false;
+
 function setupTrendCategoryEvents() {
+  if (trendCategoryEventsInitialized) return;
+  trendCategoryEventsInitialized = true;
+
   const chips = document.querySelectorAll('#trendCategoryChips .trend-cat-chip');
   chips.forEach(chip => {
-    chip.addEventListener('click', () => {
-      const cat = chip.getAttribute('data-category');
-      currentTrendCategory = cat;
-      renderMonthlyRepairTrendChart();
+    chip.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const cat = chip.getAttribute('data-category') || 'ALL';
+      if (typeof window.setTrendCategoryFilter === 'function') {
+        window.setTrendCategoryFilter(cat);
+      } else {
+        currentTrendCategory = cat;
+        renderMonthlyRepairTrendChart();
+      }
     });
   });
 }
@@ -2389,16 +2424,22 @@ function renderStackedUnitChart(container, units) {
   const plotH = baselineY - topY; // 260px tall column plot area (increased from 148px)
   const stepX = (padRight - padLeft) / (count || 1);
 
+  const isAllCats = ucSelectedCategory === 'ALL';
+  const activeCatObj = UC_STANDARD_CATEGORIES.find(c => c.name.toLowerCase() === ucSelectedCategory.toLowerCase());
+
   // Compute coordinates for each unit
   const points = units.map((u, i) => {
     const cx = count === 1 ? (padLeft + padRight) / 2 : padLeft + (stepX * i) + (stepX / 2);
-    const totalRate = u.checked > 0 ? (u.repair / u.checked) * 100 : 0;
-    const barH = Math.max(12, (totalRate / niceRateMax) * plotH);
+    const catPcs = (!isAllCats && activeCatObj) ? (u.cats[activeCatObj.name] || 0) : u.repair;
+    const catRate = u.checked > 0 ? (catPcs / u.checked) * 100 : 0;
+    const barH = Math.max(12, (catRate / niceRateMax) * plotH);
     const barY = baselineY - barH;
     return {
       ...u,
       cx,
-      totalRate,
+      displayRepair: catPcs,
+      totalRate: catRate,
+      overallRate: u.checked > 0 ? (u.repair / u.checked) * 100 : 0,
       barH,
       barY
     };
@@ -2445,24 +2486,27 @@ function renderStackedUnitChart(container, units) {
   const barsSvg = points.map(p => {
     const bx = p.cx - (barW / 2);
     const isFilteredUnit = ucSelectedUnit === p.unit;
-    const colFill = isFilteredUnit ? 'url(#ucColumnActiveGrad)' : 'url(#ucColumnStatueGrad)';
-    const repairFormatted = p.repair >= 1000 ? (p.repair / 1000).toFixed(1) + 'k' : p.repair.toLocaleString();
+    const colFill = !isAllCats && activeCatObj
+      ? activeCatObj.color
+      : (isFilteredUnit ? 'url(#ucColumnActiveGrad)' : 'url(#ucColumnStatueGrad)');
+    const repairFormatted = p.displayRepair >= 1000 ? (p.displayRepair / 1000).toFixed(1) + 'k' : p.displayRepair.toLocaleString();
+    const catTitle = !isAllCats && activeCatObj ? `${activeCatObj.name} Defect` : 'Overall Repairing';
 
     return `
       <g class="uc-col-bar ${isFilteredUnit ? 'active-unit' : ''}" data-unit="${p.unit}" style="cursor: pointer;">
         <!-- Column Pillar -->
         <rect x="${bx.toFixed(1)}" y="${p.barY.toFixed(1)}" width="${barW.toFixed(1)}" height="${p.barH.toFixed(1)}" rx="7" fill="${colFill}" filter="url(#ucColShadow)" opacity="0.94">
-          <title>Unit: Unit ${p.unit}\nOverall Repairing %: ${p.totalRate.toFixed(1)}%\nRepair Volume: ${p.repair.toLocaleString()} pcs\nChecked: ${p.checked.toLocaleString()} pcs</title>
+          <title>Unit: Unit ${p.unit}\n${catTitle} %: ${p.totalRate.toFixed(1)}%\nRepair Volume: ${p.displayRepair.toLocaleString()} pcs\nChecked: ${p.checked.toLocaleString()} pcs</title>
         </rect>
 
         <!-- Repair Volume (pcs) above column -->
-        <text x="${p.cx.toFixed(1)}" y="${(p.barY - 21).toFixed(1)}" font-size="10.5" font-weight="800" fill="#0f172a" text-anchor="middle">
+        <text x="${p.cx.toFixed(1)}" y="${(p.barY - 26).toFixed(1)}" font-size="10.5" font-weight="800" fill="#0f172a" text-anchor="middle">
           ${repairFormatted}
         </text>
 
         <!-- Repairing Percentage Callout Badge on Top -->
-        <g transform="translate(${p.cx.toFixed(1)}, ${(p.barY - 9).toFixed(1)})">
-          <rect x="-20" y="-9" width="40" height="18" rx="5" fill="${isFilteredUnit ? '#0b5c39' : '#0f172a'}" />
+        <g transform="translate(${p.cx.toFixed(1)}, ${(p.barY - 14).toFixed(1)})">
+          <rect x="-20" y="-8.5" width="40" height="17" rx="5" fill="${isFilteredUnit ? '#0b5c39' : (!isAllCats && activeCatObj ? activeCatObj.color : '#0f172a')}" />
           <text x="0" y="3.5" font-size="9.5" font-weight="800" fill="#ffffff" text-anchor="middle">${p.totalRate.toFixed(1)}%</text>
         </g>
       </g>
@@ -2530,12 +2574,6 @@ function renderStackedUnitChart(container, units) {
             <circle cx="${cp.cx.toFixed(1)}" cy="${cp.cy.toFixed(1)}" r="${nodeRadius + 2}" fill="${cat.color}" fill-opacity="0.25" />
             <circle cx="${cp.cx.toFixed(1)}" cy="${cp.cy.toFixed(1)}" r="${nodeRadius}" fill="#ffffff" stroke="${cat.color}" stroke-width="2" />
             <title>Unit ${cp.unit} - ${cat.name}: ${cp.catRate.toFixed(1)}% (${cp.pcs.toLocaleString()} pcs)</title>
-            ${isSingleFocus ? `
-              <g transform="translate(${cp.cx.toFixed(1)}, ${(cp.cy - 12).toFixed(1)})">
-                <rect x="-16" y="-6.5" width="32" height="13" rx="3" fill="${cat.color}" />
-                <text x="0" y="3" font-size="8" font-weight="800" fill="#ffffff" text-anchor="middle">${cp.catRate.toFixed(1)}%</text>
-              </g>
-            ` : ''}
           </g>
         `;
       }
@@ -2571,7 +2609,8 @@ function renderStackedUnitChart(container, units) {
 
   // Click handlers on SVG bars & labels to filter by Unit
   container.querySelectorAll('.uc-col-bar, .uc-x-label-group').forEach(el => {
-    el.addEventListener('click', () => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
       const u = el.getAttribute('data-unit');
       if (u) {
         ucSelectedUnit = ucSelectedUnit === u ? 'ALL' : u;
@@ -2587,8 +2626,13 @@ function renderStackedUnitChart(container, units) {
       e.stopPropagation();
       const cat = el.getAttribute('data-category');
       if (cat) {
-        ucSelectedCategory = ucSelectedCategory.toLowerCase() === cat.toLowerCase() ? 'ALL' : cat;
+        const nextCat = ucSelectedCategory.toLowerCase() === cat.toLowerCase() ? 'ALL' : cat;
+        ucSelectedCategory = nextCat;
+        currentCategoryFilter = nextCat;
+        currentBrandCategoryFilter = nextCat;
+        currentTrendCategory = nextCat;
         updateUcFilterPillsUI();
+        updateBrandCategoryPillsUI();
         renderUnitCategoryAnalysis();
       }
     });
@@ -2986,13 +3030,24 @@ window.setBrandFilter = function(brand) {
   currentBrandFilter = (currentBrandFilter.toUpperCase() === b.toUpperCase() && b !== 'ALL') ? 'ALL' : b;
   updateBrandFilterPillsUI();
   renderBrandRepairChart();
+  if (typeof window.refreshChartFullscreenIfOpen === 'function') {
+    window.refreshChartFullscreenIfOpen();
+  }
 };
 
 window.setBrandCategoryFilter = function(category) {
   const cat = category || 'ALL';
-  currentBrandCategoryFilter = (currentBrandCategoryFilter.toLowerCase() === cat.toLowerCase() && cat !== 'ALL') ? 'ALL' : cat;
+  const nextCat = (currentBrandCategoryFilter.toLowerCase() === cat.toLowerCase() && cat !== 'ALL') ? 'ALL' : cat;
+  currentBrandCategoryFilter = nextCat;
+  currentCategoryFilter = nextCat;
+  ucSelectedCategory = nextCat;
+  currentTrendCategory = nextCat;
   updateBrandCategoryPillsUI();
+  updateUcFilterPillsUI();
   renderBrandRepairChart();
+  if (typeof window.refreshChartFullscreenIfOpen === 'function') {
+    window.refreshChartFullscreenIfOpen();
+  }
 };
 
 function setupBrandControls() {
@@ -3025,19 +3080,27 @@ function setupBrandControls() {
   }
 
   if (resetBtn) {
-    resetBtn.addEventListener('click', () => {
+    resetBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
       const { minDate, maxDate } = getEolDatasetMinMaxDates();
       selectedBrandDateFrom = minDate;
       selectedBrandDateTo = maxDate;
       selectedBrandDatePreset = 'ALL';
       currentBrandFilter = 'ALL';
       currentBrandCategoryFilter = 'ALL';
+      currentCategoryFilter = 'ALL';
+      ucSelectedCategory = 'ALL';
+      currentTrendCategory = 'ALL';
       if (inputFrom) inputFrom.value = selectedBrandDateFrom;
       if (inputTo) inputTo.value = selectedBrandDateTo;
       updateBrandPresetButtonsUI();
       updateBrandCategoryPillsUI();
       updateBrandFilterPillsUI();
+      updateUcFilterPillsUI();
       renderBrandRepairChart();
+      if (typeof window.refreshChartFullscreenIfOpen === 'function') {
+        window.refreshChartFullscreenIfOpen();
+      }
     });
   }
 
@@ -3045,6 +3108,7 @@ function setupBrandControls() {
     presetsBar.addEventListener('click', (e) => {
       const btn = e.target.closest('.brand-preset-chip');
       if (!btn) return;
+      e.stopPropagation();
       const preset = btn.dataset.preset;
       selectedBrandDatePreset = preset;
 
@@ -3076,23 +3140,27 @@ function setupBrandControls() {
     });
   }
 
-  // Category Focus Filter
+  // Category Focus Filter - single clean delegated listener
   if (catPillsWrap && !catPillsWrap._hasBrandCatListener) {
     catPillsWrap.addEventListener('click', (e) => {
       const pill = e.target.closest('.brand-cat-pill');
       if (!pill) return;
+      e.preventDefault();
+      e.stopPropagation();
       const cat = pill.dataset.category || 'ALL';
       window.setBrandCategoryFilter(cat);
     });
     catPillsWrap._hasBrandCatListener = true;
   }
 
-  // Brand Selector Chips
+  // Brand Selector Chips - single clean delegated listener
   const brandPillsWrap = document.getElementById('brandFilterPills');
   if (brandPillsWrap && !brandPillsWrap._hasBrandFilterListener) {
     brandPillsWrap.addEventListener('click', (e) => {
       const pill = e.target.closest('.brand-pill');
       if (!pill) return;
+      e.preventDefault();
+      e.stopPropagation();
       const b = pill.dataset.brand || 'ALL';
       window.setBrandFilter(b);
     });
@@ -3226,61 +3294,39 @@ function renderBrandRepairChart() {
     spanTextEl.textContent = isAllBrands ? rangeStr : `${rangeStr} • ${currentBrandFilter}`;
   }
 
+  const isAllCats = currentBrandCategoryFilter === 'ALL';
+  const activeCatObj = STANDARD_CATEGORIES.find(c => c.name.toLowerCase() === currentBrandCategoryFilter.toLowerCase());
+
   const spanBatches = displayRecords.length;
   const spanChecked = displayRecords.reduce((sum, r) => sum + (Number(r.checkedQty) || 0), 0);
-  const spanRepair = displayRecords.reduce((sum, r) => sum + (Number(r.repairQty) || 0), 0);
+  const spanRepair = (!isAllCats && activeCatObj)
+    ? displayRecords.reduce((sum, r) => {
+        const cat = classifyRecordToStandardCategory(r.reason, r.repairQty, r.repairCategory);
+        return sum + (cat.toLowerCase() === activeCatObj.name.toLowerCase() ? (Number(r.repairQty) || 0) : 0);
+      }, 0)
+    : displayRecords.reduce((sum, r) => sum + (Number(r.repairQty) || 0), 0);
   const spanRate = spanChecked > 0 ? ((spanRepair / spanChecked) * 100).toFixed(1) : '0.0';
 
   if (spanBatchesEl) spanBatchesEl.textContent = `${spanBatches} batches`;
   if (spanCheckedEl) spanCheckedEl.textContent = spanChecked.toLocaleString();
-  if (spanRepairEl) spanRepairEl.textContent = `${spanRepair.toLocaleString()} (${spanRate}%)`;
+  if (spanRepairEl) spanRepairEl.textContent = (!isAllCats && activeCatObj)
+    ? `${spanRepair.toLocaleString()} (${spanRate}%) ${activeCatObj.name}`
+    : `${spanRepair.toLocaleString()} (${spanRate}%)`;
 
-  // Update Brand Selector Pills
+  // Update Brand Selector Pills (clean generation without duplicate inline listeners)
   if (brandPillsWrap && allBrandNames.length > 0) {
     const pillsHtml = [
-      `<button type="button" class="brand-pill ${isAllBrands ? 'active' : ''}" data-brand="ALL" onclick="window.setBrandFilter('ALL')">All Brands (${allBrandNames.length})</button>`
+      `<button type="button" class="brand-pill ${isAllBrands ? 'active' : ''}" data-brand="ALL">All Brands (${allBrandNames.length})</button>`
     ];
     allBrandNames.forEach(b => {
       const isAct = currentBrandFilter.toUpperCase() === b.toUpperCase();
-      pillsHtml.push(`<button type="button" class="brand-pill ${isAct ? 'active' : ''}" data-brand="${b}" onclick="window.setBrandFilter('${b}')">${b}</button>`);
+      pillsHtml.push(`<button type="button" class="brand-pill ${isAct ? 'active' : ''}" data-brand="${b}">${b}</button>`);
     });
     brandPillsWrap.innerHTML = pillsHtml.join('');
-
-    // Directly bind event listeners to each pill element to ensure 100% responsiveness on mobile touches
-    brandPillsWrap.querySelectorAll('.brand-pill').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        const b = btn.getAttribute('data-brand') || 'ALL';
-        window.setBrandFilter(b);
-      });
-      btn.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        const b = btn.getAttribute('data-brand') || 'ALL';
-        window.setBrandFilter(b);
-      });
-    });
   }
 
-  // Update Category Selector Pills attributes & listeners
-  const catPillsWrap = document.getElementById('brandCategoryFilterPills');
-  if (catPillsWrap) {
-    catPillsWrap.querySelectorAll('.brand-cat-pill').forEach(btn => {
-      const cat = btn.getAttribute('data-category') || 'ALL';
-      btn.setAttribute('onclick', `window.setBrandCategoryFilter('${cat}')`);
-      btn.classList.toggle('active', currentBrandCategoryFilter.toLowerCase() === cat.toLowerCase());
-      if (!btn._hasBrandCatDirectListener) {
-        btn.addEventListener('click', (e) => {
-          e.preventDefault();
-          window.setBrandCategoryFilter(cat);
-        });
-        btn.addEventListener('touchend', (e) => {
-          e.preventDefault();
-          window.setBrandCategoryFilter(cat);
-        });
-        btn._hasBrandCatDirectListener = true;
-      }
-    });
-  }
+  // Update Category Selector Pills UI
+  updateBrandCategoryPillsUI();
 
   if (badgeEl) badgeEl.textContent = `${targetBrands.length} Active Brands`;
 
@@ -3290,11 +3336,8 @@ function renderBrandRepairChart() {
   }
 
   // Update legend labels
-  const isAllCats = currentBrandCategoryFilter === 'ALL';
-  const activeCatObj = STANDARD_CATEGORIES.find(c => c.name.toLowerCase() === currentBrandCategoryFilter.toLowerCase());
-
   if (barLegendLabel) {
-    barLegendLabel.textContent = 'Column: Brand Repair % (Overall Column)';
+    barLegendLabel.textContent = isAllCats ? 'Column: Brand Repair % (Overall Column)' : `Column: ${activeCatObj.name} Defect % & Volume`;
   }
 
   if (catLegendStrip) {
@@ -3312,16 +3355,19 @@ function renderBrandRepairChart() {
     }
   }
 
-  // Plot Data
+  // Plot Data (category-specific when category filter is active)
   const plotData = targetBrands.map(b => {
     const d = brandMap[b];
-    const repPct = d.checked > 0 ? +((d.repair / d.checked) * 100).toFixed(1) : 0.0;
+    const catPcs = (!isAllCats && activeCatObj) ? (d.cats[activeCatObj.name] || 0) : d.repair;
+    const catRate = d.checked > 0 ? +((catPcs / d.checked) * 100).toFixed(1) : 0.0;
     return {
       brand: b,
       checked: d.checked,
-      repair: d.repair,
+      repair: catPcs,
+      totalRepair: d.repair,
       wh: d.wh,
-      rate: repPct,
+      rate: catRate,
+      overallRate: d.checked > 0 ? +((d.repair / d.checked) * 100).toFixed(1) : 0.0,
       batches: d.batches,
       cats: d.cats
     };
@@ -3397,7 +3443,10 @@ function renderBrandRepairChart() {
   const barsSvg = points.map(p => {
     const bx = p.cx - (barW / 2);
     const isFilteredBrand = currentBrandFilter.toUpperCase() === p.brand.toUpperCase();
-    const colFill = isFilteredBrand ? 'url(#brandColumnActiveGrad)' : 'url(#brandColumnStatueGrad)';
+    const colFill = !isAllCats && activeCatObj
+      ? activeCatObj.color
+      : (isFilteredBrand ? 'url(#brandColumnActiveGrad)' : 'url(#brandColumnStatueGrad)');
+    const catTitle = !isAllCats && activeCatObj ? `${activeCatObj.name} Defect` : 'Overall Repair';
 
     const chkDisplay = p.checked >= 1000 ? `${(p.checked / 1000).toFixed(1)}k` : p.checked;
 
@@ -3429,19 +3478,20 @@ function renderBrandRepairChart() {
       <g class="brand-col-bar ${isFilteredBrand ? 'active-brand' : ''}" data-brand="${p.brand}" style="cursor: pointer;">
         <!-- Column Pillar -->
         <rect x="${bx.toFixed(1)}" y="${p.barY.toFixed(1)}" width="${barW.toFixed(1)}" height="${p.barH.toFixed(1)}" rx="5" fill="${colFill}" filter="url(#brandColumnShadow)" opacity="0.92">
-          <title>Brand: ${p.brand}\nOverall Repair: ${p.rate}%\nRepair Pieces: ${p.repair.toLocaleString()} pcs\nChecked: ${p.checked.toLocaleString()} pcs\nBatches: ${p.batches}</title>
+          <title>Brand: ${p.brand}\n${catTitle}: ${p.rate}%\nRepair Pieces: ${p.repair.toLocaleString()} pcs\nChecked: ${p.checked.toLocaleString()} pcs\nBatches: ${p.batches}</title>
         </rect>
-
         <!-- Repair Volume (pcs) -->
-        <text x="${p.cx.toFixed(1)}" y="${(p.barY - 17).toFixed(1)}" font-size="9" font-weight="800" fill="#0f172a" text-anchor="middle">
+        <text x="${p.cx.toFixed(1)}" y="${(p.barY - 25).toFixed(1)}" font-size="9" font-weight="800" fill="#0f172a" text-anchor="middle">
           ${p.repair.toLocaleString()}
         </text>
 
         <!-- % Badge Pill -->
-        <rect x="${(p.cx - 17).toFixed(1)}" y="${(p.barY - 13.5).toFixed(1)}" width="34" height="13" rx="3.5" fill="#0f172a" />
-        <text x="${p.cx.toFixed(1)}" y="${(p.barY - 4).toFixed(1)}" font-size="7.5" font-weight="800" fill="#ffffff" text-anchor="middle">
-          ${p.rate}%
-        </text>
+        <g transform="translate(${p.cx.toFixed(1)}, ${(p.barY - 13).toFixed(1)})">
+          <rect x="-17" y="-7" width="34" height="14" rx="4" fill="${!isAllCats && activeCatObj ? activeCatObj.color : (isFilteredBrand ? '#0b5c39' : '#0f172a')}" />
+          <text x="0" y="3" font-size="8" font-weight="800" fill="#ffffff" text-anchor="middle">
+            ${p.rate}%
+          </text>
+        </g>
 
         <!-- X-Axis Labels: Brand Name & Checked Volume -->
         ${brandLabelSvg}
@@ -3522,11 +3572,12 @@ function renderBrandRepairChart() {
 
   // Click on Brand columns in SVG to toggle filter
   chartWrap.querySelectorAll('.brand-col-bar').forEach(col => {
-    col.addEventListener('click', () => {
+    col.addEventListener('click', (e) => {
+      e.stopPropagation();
       const b = col.getAttribute('data-brand');
-      currentBrandFilter = (currentBrandFilter.toUpperCase() === b.toUpperCase()) ? 'ALL' : b;
-      updateBrandFilterPillsUI();
-      renderBrandRepairChart();
+      if (b) {
+        window.setBrandFilter(b);
+      }
     });
   });
 }
@@ -4631,12 +4682,38 @@ async function exportQcReportToPdf() {
 }
 
 // ═════════════════════════════════════════════════════════════
-// FULLSCREEN & ROTATED CHART MODAL LOGIC
+// FULLSCREEN & ROTATED CHART MODAL LOGIC WITH INTERACTIVE FILTERS
 // ═════════════════════════════════════════════════════════════
 
 let currentFullscreenTargetId = null;
 let currentFullscreenLegendId = null;
-let isFullscreenRotated = true; // Default 90deg landscape on portrait mobile
+let isFullscreenRotated = false; // Default natural upright orientation for stability and touch friendliness
+
+// Define window.setTrendCategoryFilter globally if not present
+if (typeof window.setTrendCategoryFilter !== 'function') {
+  window.setTrendCategoryFilter = function(cat) {
+    const nextCat = (currentTrendCategory.toLowerCase() === (cat || 'ALL').toLowerCase() && cat !== 'ALL') ? 'ALL' : (cat || 'ALL');
+    currentTrendCategory = nextCat;
+    currentCategoryFilter = nextCat;
+    currentBrandCategoryFilter = nextCat;
+    ucSelectedCategory = nextCat;
+    updateBrandCategoryPillsUI();
+    updateUcFilterPillsUI();
+    const chips = document.querySelectorAll('#trendCategoryChips .trend-cat-chip');
+    chips.forEach(chip => {
+      const c = chip.getAttribute('data-category');
+      if (c && c.toLowerCase() === currentTrendCategory.toLowerCase()) {
+        chip.classList.add('active');
+      } else {
+        chip.classList.remove('active');
+      }
+    });
+    renderMonthlyRepairTrendChart();
+    if (typeof window.refreshChartFullscreenIfOpen === 'function') {
+      window.refreshChartFullscreenIfOpen();
+    }
+  };
+}
 
 function initChartFullscreenHandlers() {
   const overlay = document.getElementById('chartFsOverlay');
@@ -4647,6 +4724,13 @@ function initChartFullscreenHandlers() {
   const bodyEl = document.getElementById('chartFsBody');
   const titleEl = document.getElementById('chartFsTitle');
   const legendBar = document.getElementById('chartFsLegendBar');
+  const filtersBar = document.getElementById('chartFsFiltersBar');
+  const categoryPillsEl = document.getElementById('cfsCategoryPills');
+  const secondaryRowEl = document.getElementById('cfsSecondaryRow');
+  const secondaryLabelEl = document.getElementById('cfsSecondaryLabelText');
+  const secondaryPillsEl = document.getElementById('cfsSecondaryPills');
+  const resetBtn = document.getElementById('cfsResetBtn');
+  const activeFilterIndicator = document.getElementById('cfsActiveFilterIndicator');
 
   if (!overlay || !dialog || !bodyEl) return;
 
@@ -4671,6 +4755,278 @@ function initChartFullscreenHandlers() {
     }
   }
 
+  // -------------------------------------------------------------
+  // FULLSCREEN FILTER LOGIC & RENDERING
+  // -------------------------------------------------------------
+  function getActiveFiltersForChart(targetId) {
+    let activeCategory = 'ALL';
+    let secondaryType = 'unit';
+    let secondaryLabel = 'Unit';
+    let activeSecondary = 'ALL';
+
+    if (targetId === 'brandChartWrap') {
+      activeCategory = currentBrandCategoryFilter || 'ALL';
+      secondaryType = 'brand';
+      secondaryLabel = 'Brand';
+      activeSecondary = currentBrandFilter || 'ALL';
+    } else if (targetId === 'ucChartWrap') {
+      activeCategory = ucSelectedCategory || 'ALL';
+      secondaryType = 'unit';
+      secondaryLabel = 'Unit';
+      activeSecondary = ucSelectedUnit || 'ALL';
+    } else if (targetId === 'smartTrendChartWrap') {
+      activeCategory = currentTrendCategory || 'ALL';
+      secondaryType = 'preset';
+      secondaryLabel = 'Range';
+      activeSecondary = currentTrendPreset || 'ALL';
+    } else if (targetId === 'inspectorComboChartWrap') {
+      activeCategory = currentCategoryFilter || 'ALL';
+      secondaryType = 'unit';
+      secondaryLabel = 'Unit';
+      activeSecondary = currentReportUnitFilter || 'ALL';
+    } else {
+      // categoryColumnChart
+      activeCategory = currentCategoryFilter || 'ALL';
+      secondaryType = 'unit';
+      secondaryLabel = 'Unit';
+      activeSecondary = currentReportUnitFilter || 'ALL';
+    }
+
+    return { activeCategory, secondaryType, secondaryLabel, activeSecondary };
+  }
+
+  function renderFullscreenFilters(targetId) {
+    if (!filtersBar || !categoryPillsEl || !secondaryPillsEl) return;
+
+    const { activeCategory, secondaryType, secondaryLabel, activeSecondary } = getActiveFiltersForChart(targetId);
+
+    // 1. Populate Category Filter Pills (ALL + 7 Standard Categories)
+    const isAllCat = (!activeCategory || activeCategory.toUpperCase() === 'ALL');
+    let catHtml = `
+      <button type="button" class="cfs-pill ${isAllCat ? 'active' : ''}" data-cat="ALL">
+        <span class="cfs-pill-dot" style="background: #0b5c39;"></span>
+        <span>All Categories</span>
+      </button>
+    `;
+
+    catHtml += STANDARD_CATEGORIES.map(sc => {
+      const isSel = (!isAllCat && activeCategory.toLowerCase() === sc.name.toLowerCase());
+      return `
+        <button type="button" class="cfs-pill ${isSel ? 'active' : ''}" data-cat="${sc.name}">
+          <span class="cfs-pill-dot" style="background: ${sc.color};"></span>
+          <span>${sc.name}</span>
+        </button>
+      `;
+    }).join('');
+
+    categoryPillsEl.innerHTML = catHtml;
+
+    // Attach Category click listeners
+    categoryPillsEl.querySelectorAll('.cfs-pill').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const cat = btn.getAttribute('data-cat') || 'ALL';
+        applyFullscreenCategoryFilter(targetId, cat);
+      });
+    });
+
+    // 2. Populate Secondary Filter Pills (Contextual by Chart)
+    if (secondaryLabelEl) {
+      secondaryLabelEl.textContent = secondaryLabel + ':';
+    }
+
+    let secHtml = '';
+    if (secondaryType === 'brand') {
+      const activeBrands = ['ALL', 'PIQUADRO', 'RADLEY', 'ABBOTT LYON', 'BRIGHTON', 'NOOE', 'HARRODS'];
+      secHtml = activeBrands.map(b => {
+        const isSel = (activeSecondary.toUpperCase() === b.toUpperCase());
+        const label = b === 'ALL' ? 'All Brands' : b;
+        return `
+          <button type="button" class="cfs-pill ${isSel ? 'active' : ''}" data-sec-type="brand" data-sec-val="${b}">
+            <span>${label}</span>
+          </button>
+        `;
+      }).join('');
+    } else if (secondaryType === 'preset') {
+      const presets = [
+        { id: 'ALL', label: 'All Months' },
+        { id: 'LATEST', label: 'Latest Month' },
+        { id: 'L2M', label: 'Last 2 Months' },
+        { id: 'L3M', label: 'Last 3 Months' }
+      ];
+      secHtml = presets.map(p => {
+        const isSel = (activeSecondary === p.id);
+        return `
+          <button type="button" class="cfs-pill ${isSel ? 'active' : ''}" data-sec-type="preset" data-sec-val="${p.id}">
+            <span>${p.label}</span>
+          </button>
+        `;
+      }).join('');
+    } else {
+      // Unit pills (default)
+      const units = ['ALL', 'P-32', 'S-18', 'S-37', 'S-29', '14-B'];
+      secHtml = units.map(u => {
+        const isSel = (activeSecondary.toUpperCase() === u.toUpperCase());
+        const label = u === 'ALL' ? 'All Units' : `Unit ${u}`;
+        return `
+          <button type="button" class="cfs-pill ${isSel ? 'active' : ''}" data-sec-type="unit" data-sec-val="${u}">
+            <span>${label}</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    secondaryPillsEl.innerHTML = secHtml;
+
+    // Attach Secondary click listeners
+    secondaryPillsEl.querySelectorAll('.cfs-pill').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const type = btn.getAttribute('data-sec-type');
+        const val = btn.getAttribute('data-sec-val');
+        applyFullscreenSecondaryFilter(targetId, type, val);
+      });
+    });
+
+    // 3. Reset Button State
+    const hasCategoryFilter = (!isAllCat);
+    const hasSecondaryFilter = (activeSecondary.toUpperCase() !== 'ALL');
+    const hasInspectorFilter = (targetId === 'inspectorComboChartWrap' && currentInspectorFilter !== 'ALL');
+
+    if (resetBtn) {
+      if (hasCategoryFilter || hasSecondaryFilter || hasInspectorFilter) {
+        resetBtn.style.display = 'inline-flex';
+        resetBtn.onclick = (e) => {
+          e.stopPropagation();
+          resetFullscreenFilters(targetId);
+        };
+      } else {
+        resetBtn.style.display = 'none';
+      }
+    }
+
+    // 4. Update Footer Indicator
+    if (activeFilterIndicator) {
+      const catText = hasCategoryFilter ? activeCategory : 'All Categories';
+      const secText = hasSecondaryFilter ? `${secondaryLabel}: ${activeSecondary}` : `All ${secondaryLabel}s`;
+      const inspText = hasInspectorFilter ? ` • Inspector: ${currentInspectorFilter}` : '';
+      if (!hasCategoryFilter && !hasSecondaryFilter && !hasInspectorFilter) {
+        activeFilterIndicator.textContent = 'Showing All Data';
+      } else {
+        activeFilterIndicator.textContent = `${catText} • ${secText}${inspText}`;
+      }
+    }
+  }
+
+  async function applyFullscreenCategoryFilter(targetId, newCategory) {
+    const cat = newCategory || 'ALL';
+    const { activeCategory } = getActiveFiltersForChart(targetId);
+    const nextCat = (activeCategory.toLowerCase() === cat.toLowerCase() && cat !== 'ALL') ? 'ALL' : cat;
+
+    currentCategoryFilter = nextCat;
+    currentBrandCategoryFilter = nextCat;
+    ucSelectedCategory = nextCat;
+    currentTrendCategory = nextCat;
+
+    updateBrandCategoryPillsUI();
+    updateUcFilterPillsUI();
+
+    if (targetId === 'brandChartWrap') {
+      renderBrandRepairChart();
+    } else if (targetId === 'ucChartWrap') {
+      renderUnitCategoryAnalysis();
+    } else if (targetId === 'smartTrendChartWrap') {
+      renderMonthlyRepairTrendChart();
+    } else {
+      await renderReportsView();
+    }
+
+    renderFullscreenFilters(targetId);
+    renderFullscreenContent(targetId, currentFullscreenLegendId);
+  }
+
+  async function applyFullscreenSecondaryFilter(targetId, type, val) {
+    if (targetId === 'brandChartWrap') {
+      if (typeof window.setBrandFilter === 'function') {
+        window.setBrandFilter(val);
+      } else {
+        currentBrandFilter = (currentBrandFilter.toUpperCase() === (val || '').toUpperCase() && val !== 'ALL') ? 'ALL' : val;
+        updateBrandFilterPillsUI();
+        renderBrandRepairChart();
+      }
+    } else if (targetId === 'ucChartWrap') {
+      ucSelectedUnit = (ucSelectedUnit.toUpperCase() === (val || '').toUpperCase() && val !== 'ALL') ? 'ALL' : val;
+      updateUcFilterPillsUI();
+      renderUnitCategoryAnalysis();
+    } else if (targetId === 'smartTrendChartWrap') {
+      currentTrendPreset = val || 'ALL';
+      const availableTrendMonths = (eolQcCache || [])
+        .map(r => parseGvizDate(r.checkDate) ? parseGvizDate(r.checkDate).slice(0, 7) : '')
+        .filter((m, i, arr) => m && m.length === 7 && arr.indexOf(m) === i)
+        .sort();
+
+      if (val === 'ALL') {
+        selectedTrendMonths = [...availableTrendMonths];
+      } else if (val === 'L3M') {
+        selectedTrendMonths = availableTrendMonths.slice(-3);
+      } else if (val === 'L2M') {
+        selectedTrendMonths = availableTrendMonths.slice(-2);
+      } else if (val === 'LATEST') {
+        selectedTrendMonths = availableTrendMonths.slice(-1);
+      }
+      renderMonthlyRepairTrendChart();
+    } else {
+      // categoryColumnChart or inspectorComboChartWrap
+      currentReportUnitFilter = (currentReportUnitFilter.toUpperCase() === (val || '').toUpperCase() && val !== 'ALL') ? 'ALL' : val;
+      const uPills = document.querySelectorAll('#repUnitFilterPills .rep-filter-pill');
+      uPills.forEach(p => {
+        if (p.getAttribute('data-unit') === currentReportUnitFilter) p.classList.add('active');
+        else p.classList.remove('active');
+      });
+      await renderReportsView();
+    }
+
+    renderFullscreenFilters(targetId);
+    renderFullscreenContent(targetId, currentFullscreenLegendId);
+  }
+
+  async function resetFullscreenFilters(targetId) {
+    currentCategoryFilter = 'ALL';
+    currentBrandCategoryFilter = 'ALL';
+    ucSelectedCategory = 'ALL';
+    currentTrendCategory = 'ALL';
+    updateBrandCategoryPillsUI();
+    updateUcFilterPillsUI();
+
+    if (targetId === 'brandChartWrap') {
+      currentBrandFilter = 'ALL';
+      updateBrandFilterPillsUI();
+      renderBrandRepairChart();
+    } else if (targetId === 'ucChartWrap') {
+      ucSelectedUnit = 'ALL';
+      updateUcFilterPillsUI();
+      renderUnitCategoryAnalysis();
+    } else if (targetId === 'smartTrendChartWrap') {
+      currentTrendPreset = 'ALL';
+      const availableTrendMonths = (eolQcCache || [])
+        .map(r => parseGvizDate(r.checkDate) ? parseGvizDate(r.checkDate).slice(0, 7) : '')
+        .filter((m, i, arr) => m && m.length === 7 && arr.indexOf(m) === i)
+        .sort();
+      selectedTrendMonths = [...availableTrendMonths];
+      renderMonthlyRepairTrendChart();
+    } else if (targetId === 'inspectorComboChartWrap') {
+      currentReportUnitFilter = 'ALL';
+      currentInspectorFilter = 'ALL';
+      await renderReportsView();
+    } else {
+      currentReportUnitFilter = 'ALL';
+      await renderReportsView();
+    }
+
+    renderFullscreenFilters(targetId);
+    renderFullscreenContent(targetId, currentFullscreenLegendId);
+  }
+
   function renderFullscreenContent(targetId, legendId) {
     const sourceChart = document.getElementById(targetId);
     if (!sourceChart || !bodyEl) return;
@@ -4680,16 +5036,44 @@ function initChartFullscreenHandlers() {
     clone.id = sourceChart.id + '_fullscreen';
     bodyEl.appendChild(clone);
 
-    // If it's categoryColumnChart, attach interactive column filters
+    // Interactive Click Attachments on Cloned SVG / Elements in Fullscreen
     if (targetId === 'categoryColumnChart') {
       clone.querySelectorAll('.col-chart-col').forEach(col => {
-        col.addEventListener('click', () => {
+        col.addEventListener('click', (e) => {
+          e.stopPropagation();
           const catName = col.getAttribute('data-cat');
-          currentCategoryFilter = (currentCategoryFilter === catName) ? 'ALL' : catName;
-          renderReportsView();
-          setTimeout(() => {
+          applyFullscreenCategoryFilter(targetId, catName);
+        });
+      });
+    } else if (targetId === 'brandChartWrap') {
+      clone.querySelectorAll('.brand-col-bar').forEach(col => {
+        col.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const b = col.getAttribute('data-brand');
+          applyFullscreenSecondaryFilter(targetId, 'brand', b);
+        });
+      });
+    } else if (targetId === 'ucChartWrap') {
+      clone.querySelectorAll('.uc-col-bar').forEach(col => {
+        col.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const u = col.getAttribute('data-unit');
+          if (u) {
+            applyFullscreenSecondaryFilter(targetId, 'unit', u);
+          }
+        });
+      });
+    } else if (targetId === 'inspectorComboChartWrap') {
+      clone.querySelectorAll('[data-inspector]').forEach(el => {
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const insp = el.getAttribute('data-inspector');
+          if (insp) {
+            currentInspectorFilter = (currentInspectorFilter.toLowerCase() === insp.toLowerCase()) ? 'ALL' : insp;
+            renderReportsView();
+            renderFullscreenFilters(targetId);
             renderFullscreenContent(targetId, legendId);
-          }, 60);
+          }
         });
       });
     }
@@ -4722,11 +5106,12 @@ function initChartFullscreenHandlers() {
       titleEl.textContent = chartTitle || 'QC Chart View';
     }
 
+    renderFullscreenFilters(chartTargetId);
     renderFullscreenContent(chartTargetId, legendTargetId);
 
-    // Default to rotated 90deg if currently portrait mobile (width <= height)
-    const isPortrait = window.innerWidth <= window.innerHeight;
-    updateDialogRotation(isPortrait);
+    // Default to unrotated (natural upright mode) so charts and filter pills are 100% stable, upright, and touch-friendly without sideways layout jitter
+    isFullscreenRotated = false;
+    updateDialogRotation(false);
 
     // Show overlay
     overlay.classList.add('active');
@@ -4831,6 +5216,7 @@ function initChartFullscreenHandlers() {
   // Expose global helper to refresh if open
   window.refreshChartFullscreenIfOpen = () => {
     if (overlay.classList.contains('active') && currentFullscreenTargetId) {
+      renderFullscreenFilters(currentFullscreenTargetId);
       renderFullscreenContent(currentFullscreenTargetId, currentFullscreenLegendId);
     }
   };
